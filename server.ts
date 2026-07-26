@@ -28,7 +28,11 @@ app.use((req, res, next) => {
 });
 
 // Initialize Gemini Client
-const geminiApiKey = process.env.GEMINI_API_KEY || '';
+const geminiApiKey =
+  process.env.GEMINI_API_KEY ||
+  process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
+  process.env.VITE_GEMINI_API_KEY ||
+  '';
 const ai = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
 
 // In-Memory Database Store (Mirroring Supabase PostgreSQL schema)
@@ -383,6 +387,49 @@ app.post('/api/webhooks/payment', (req: Request, res: Response) => {
 // 3. API ROUTE 1: GUIONES Y ESTRATEGIA (Gemini 2.0 Flash)
 // ==========================================
 
+// Helper for dynamic script fallback
+const buildDynamicScript = (topicPrompt: string, niche?: string) => {
+  const topic = topicPrompt.trim();
+  const mainTitle = `Los Secretos Virales de ${topic}: Guía Completa y Revelaciones`;
+  return {
+    titulo_principal: mainTitle,
+    titulos_alternativos_AB: [
+      `Cómo Dominar ${topic} en 2026: Estrategias que Nadie te Enseña`,
+      `El Impacto Oculto de ${topic}: Lo que los Expertos No Quieren que Sepas`
+    ],
+    guion_escenas: [
+      {
+        timestamp: "00:00 - 00:15",
+        locucion_texto: `Bienvenido a esta entrega especial sobre ${topic}. En los próximos minutos te revelaremos la estructura completa y los secretos clave que están transformando este nicho por completo...`,
+        indicacion_broll: `Secuencia cinematográfica de alta calidad con iluminación neón cyberpunk en 4K representando ${topic}.`,
+        prompt_imagen_ingles: `Cinematic HD visualization for ${topic}, glowing cyan and purple neon ambient lighting, 8k render --ar 16:9`
+      },
+      {
+        timestamp: "00:15 - 00:45",
+        locucion_texto: `El primer aspecto fundamental que debes comprender sobre ${topic} es la combinación de la pasión con la técnica. Cuando aplicas este método, la respuesta de la audiencia es inmediata...`,
+        indicacion_broll: `Primer plano cinematográfico con efectos de partículas luminosas y gráficos digitales dinámicos sobre ${topic}.`,
+        prompt_imagen_ingles: `High quality cinematic close-up of ${topic} elements, futuristic ambient glow, hyperrealistic 8k --ar 16:9`
+      },
+      {
+        timestamp: "00:45 - 01:15",
+        locucion_texto: `Finalmente, la clave para consolidar tu canal en el nicho de ${topic} reside en la autenticidad del mensaje y la frecuencia. Si sigues estos 3 pasos, tu impacto será masivo.`,
+        indicacion_broll: `Tomas panorámicas ascendentes con estética cyberpunk y paleta de colores cyan y violeta neón.`,
+        prompt_imagen_ingles: `Panoramic futuristic view representing success in ${topic}, epic lighting, 8k resolution --ar 16:9`
+      }
+    ],
+    seo: {
+      descripcion_optimizada: `En este video revelamos la guía definitiva sobre ${topic}. Descubre secretos clave, análisis en profundidad y la mejor estrategia para 2026.\n\n⏱️ TIMESTAMPS:\n00:00 - Introducción a ${topic}\n00:15 - El Pilar Fundamental\n00:45 - Conclusión y Estrategia\n\n👉 Suscríbete para más contenido exclusivo.`,
+      tags_lista: [topic.toLowerCase(), `${topic.toLowerCase()} 2026`, "viral youtube", "canales faceless"],
+      hashtags: [`#${topic.replace(/[^a-zA-Z0-9]/g, '')}`, "#YouTubeFaceless", "#ContenidoViral"]
+    },
+    branding_sugerido: {
+      nombre_canal: `${topic.split(' ')[0] || topic} HQ`,
+      concepto: `Especialistas en contenido viral y estratégico sobre ${topic}.`,
+      paleta_hex: ["#00F0FF", "#8A2BE2", "#00FF88", "#07090E"]
+    }
+  };
+};
+
 app.post('/api/ai/generate-script', async (req: Request, res: Response) => {
   const { idea, videoUrl, niche, userEmail } = req.body;
   const email = userEmail || 'didier@facelessai.io';
@@ -397,50 +444,19 @@ app.post('/api/ai/generate-script', async (req: Request, res: Response) => {
 
   try {
     if (!ai) {
-      // Structured fallback matching exact schema requested by user
       return res.json({
         success: true,
         source: 'fallback-structured',
         credits_deducted: 10,
         remaining_credits: deduction.remainingCredits,
-        data: {
-          titulo_principal: "Las 5 Inversiones Secretas que los Jóvenes Millonarios Ocultan (La #3 Paga Diario)",
-          titulos_alternativos_AB: [
-            "Haz Esto Antes de los 30: El Activo de Ingresos Pasivos que Nadie te Enseña",
-            "5 Formas en que los Millonarios Multiplican su Dinero en Secreto (Copia la #3)"
-          ],
-          guion_escenas: [
-            {
-              timestamp: "00:00 - 00:15",
-              locucion_texto: "El 99% de las personas trabaja por dinero toda su vida, pero los verdaderos millonarios menores de 30 años hacen que su dinero trabaje en piloto automático. En este video te revelaré las 5 inversiones secretas que nadie te enseña...",
-              indicacion_broll: "Tomas cinematográficas de alta velocidad de edificios financieros iluminados de noche en 4K, gráficos digitales en 3D superpuestos mostrando gráficos ascendentes.",
-              prompt_imagen_ingles: "Cinematic night view of futuristic Wall Street financial district, cyan neon glowing stocks chart overlay, hyperrealistic 8k render, cyberpunk aesthetic --ar 16:9"
-            },
-            {
-              timestamp: "00:15 - 00:45",
-              locucion_texto: "La primera inversión es la Automatización de Atención Digital. No necesitas mostrar tu rostro. Los canales Faceless potenciados con IA están generando miles de dólares al mes en ingresos pasivos...",
-              indicacion_broll: "Primer plano de una laptop futurista mostrando paneles analíticos de YouTube con ingresos crecientes, luz azul neón envolviendo la escena.",
-              prompt_imagen_ingles: "Futuristic workstation with sleek laptop displaying viral analytics dashboards, neon blue ambient lighting, dark background, 8k cinematic --ar 16:9"
-            }
-          ],
-          seo: {
-            descripcion_optimizada: "En este video revelamos las 5 inversiones secretas que los millonarios menores de 30 años utilizan para construir libertad financiera real e ingresos pasivos todos los días.\n\n🔥 Únete a la comunidad de inversores inteligentes:\n👉 Suscríbete a Capital Cero: https://youtube.com/@CapitalCeroHQ\n\n⏱️ TIMESTAMPS:\n00:00 - El Secreto del 1%\n00:15 - Inversión #1: Automatización Faceless IA\n01:15 - Inversión #3: Micro-SaaS e IA (Ingresos Diarios)\n\n⚠️ DESCARGO DE RESPONSABILIDAD: Este contenido es exclusivamente educativo.",
-            tags_lista: ["inversiones secretas millonarios", "ingresos pasivos 2026", "finanzas personales jovenes", "activos digitales rentables", "canales faceless youtube"],
-            hashtags: ["#FinanzasPersonales", "#IngresosPasivos", "#Inversiones2026", "#LibertadFinanciera"]
-          },
-          branding_sugerido: {
-            nombre_canal: "Capital Cero HQ",
-            concepto: "Estrategias avanzadas de finanzas personales e inversiones automatizadas con IA.",
-            paleta_hex: ["#00F0FF", "#8A2BE2", "#00FF88", "#07090E"]
-          }
-        }
+        data: buildDynamicScript(topicPrompt, niche)
       });
     }
 
     const systemPrompt = `Eres un guionista y estratega de contenido élite para YouTube Faceless AI Engine v3.6.
 Genera un guión estructurado optimizado para el nicho: "${niche || 'Finanzas y Tecnología'}" basado en la idea/tema: "${topicPrompt}".
 
-Devuelve la respuesta en formato JSON estrictamente válido con la siguiente estructura:
+Devuelve la respuesta en formato JSON strictly válido con la siguiente estructura:
 {
   "titulo_principal": "string",
   "titulos_alternativos_AB": ["string", "string"],
@@ -480,43 +496,13 @@ Devuelve la respuesta en formato JSON estrictamente válido con la siguiente est
       data: parsedData
     });
   } catch (error: any) {
-    console.warn('Gemini API rate limit or error encountered. Returning structured fallback JSON.', error?.message);
+    console.warn('Gemini API rate limit or error encountered. Returning structured dynamic JSON.', error?.message);
     return res.json({
       success: true,
       source: 'fallback-structured',
       credits_deducted: 10,
       remaining_credits: deduction.remainingCredits,
-      data: {
-        titulo_principal: "Las 5 Inversiones Secretas que los Jóvenes Millonarios Ocultan (La #3 Paga Diario)",
-        titulos_alternativos_AB: [
-          "Haz Esto Antes de los 30: El Activo de Ingresos Pasivos que Nadie te Enseña",
-          "5 Formas en que los Millonarios Multiplican su Dinero en Secreto (Copia la #3)"
-        ],
-        guion_escenas: [
-          {
-            timestamp: "00:00 - 00:15",
-            locucion_texto: "El 99% de las personas trabaja por dinero toda su vida, pero los verdaderos millonarios menores de 30 años hacen que su dinero trabaje en piloto automático. En este video te revelaré las 5 inversiones secretas que nadie te enseña...",
-            indicacion_broll: "Tomas cinematográficas de alta velocidad de edificios financieros iluminados de noche en 4K, gráficos digitales en 3D superpuestos mostrando gráficos ascendentes.",
-            prompt_imagen_ingles: "Cinematic night view of futuristic Wall Street financial district, cyan neon glowing stocks chart overlay, hyperrealistic 8k render, cyberpunk aesthetic --ar 16:9"
-          },
-          {
-            timestamp: "00:15 - 00:45",
-            locucion_texto: "La primera inversión es la Automatización de Atención Digital. No necesitas mostrar tu rostro. Los canales Faceless potenciados con IA están generando miles de dólares al mes en ingresos pasivos...",
-            indicacion_broll: "Primer plano de una laptop futurista mostrando paneles analíticos de YouTube con ingresos crecientes, luz azul neón envolviendo la escena.",
-            prompt_imagen_ingles: "Futuristic workstation with sleek laptop displaying viral analytics dashboards, neon blue ambient lighting, dark background, 8k cinematic --ar 16:9"
-          }
-        ],
-        seo: {
-          descripcion_optimizada: "En este video revelamos las 5 inversiones secretas que los millonarios menores de 30 años utilizan para construir libertad financiera real e ingresos pasivos todos los días.\n\n🔥 Únete a la comunidad de inversores inteligentes:\n👉 Suscríbete a Capital Cero: https://youtube.com/@CapitalCeroHQ\n\n⏱️ TIMESTAMPS:\n00:00 - El Secreto del 1%\n00:15 - Inversión #1: Automatización Faceless IA\n01:15 - Inversión #3: Micro-SaaS e IA (Ingresos Diarios)\n\n⚠️ DESCARGO DE RESPONSABILIDAD: Este contenido es exclusivamente educativo.",
-          tags_lista: ["inversiones secretas millonarios", "ingresos pasivos 2026", "finanzas personales jovenes", "activos digitales rentables", "canales faceless youtube"],
-          hashtags: ["#FinanzasPersonales", "#IngresosPasivos", "#Inversiones2026", "#LibertadFinanciera"]
-        },
-        branding_sugerido: {
-          nombre_canal: "Capital Cero HQ",
-          concepto: "Estrategias avanzadas de finanzas personales e inversiones automatizadas con IA.",
-          paleta_hex: ["#00F0FF", "#8A2BE2", "#00FF88", "#07090E"]
-        }
-      }
+      data: buildDynamicScript(topicPrompt, niche)
     });
   }
 });

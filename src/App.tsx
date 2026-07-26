@@ -295,16 +295,17 @@ export default function App() {
   const [transcript, setTranscript] = useState(
     "En este video te revelo las 5 inversiones que los millonarios hacen en secreto antes de los 30 años. La tercera opción nadie la conoce pero genera ingresos pasivos todos los días..."
   );
-  const [strategyResult] = useState<AnalysisResult>(STRATEGY_DATA);
-  const [guionResult] = useState<GuionResult>(GUION_DATA);
-  const [brandingResult] = useState<BrandingResult>(BRANDING_DATA);
-  const [metadataResult] = useState<MetadataResult>(METADATA_DATA);
+  const [strategyResult, setStrategyResult] = useState<AnalysisResult>(STRATEGY_DATA);
+  const [guionResult, setGuionResult] = useState<GuionResult>(GUION_DATA);
+  const [brandingResult, setBrandingResult] = useState<BrandingResult>(BRANDING_DATA);
+  const [metadataResult, setMetadataResult] = useState<MetadataResult>(METADATA_DATA);
   const [savedChannels, setSavedChannels] = useState<SavedChannel[]>(INITIAL_SAVED_CHANNELS);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUrl, setNewUrl] = useState('');
   const [newName, setNewName] = useState('');
   const [newNiche, setNewNiche] = useState('Inversiones');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [apiErrorMsg, setApiErrorMsg] = useState<string | null>(null);
 
   // Commercial & User Management State
   const [userPlan, setUserPlan] = useState<'PRO' | 'CREATOR' | 'AGENCY'>('PRO');
@@ -887,11 +888,104 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  const handleSimulateAnalyze = () => {
+  const handleAnalyzeConcept = async () => {
+    if (!transcript.trim()) return;
+
+    if (userCredits < 10) {
+      setShowUpgradeModal(true);
+      setToastMessage("Créditos insuficientes para generar guion (Requeridos: 10 Créditos).");
+      setTimeout(() => setToastMessage(null), 3000);
+      return;
+    }
+
     setIsAnalyzing(true);
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/ai/generate-script', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idea: transcript,
+          niche: onboardingNiche || 'Finanzas & Tecnología',
+          userEmail: activationEmail || 'didier@facelessai.io'
+        })
+      });
+
+      const resData = await response.json();
+
+      if (!response.ok || !resData.success) {
+        const errorDetail = resData.error || resData.message || `Error HTTP ${response.status}: No se pudo procesar la solicitud con Gemini API.`;
+        setApiErrorMsg(errorDetail);
+        setToastMessage(`⚠️ Error de API IA: ${errorDetail}`);
+        setTimeout(() => setToastMessage(null), 5000);
+        return;
+      }
+
+      setApiErrorMsg(null);
+
+      if (resData.data) {
+        const aiData = resData.data;
+
+        if (resData.remaining_credits !== undefined) {
+          setUserCredits(resData.remaining_credits);
+        } else {
+          setUserCredits(prev => Math.max(0, prev - 10));
+        }
+
+        // 1. Update Guion State
+        if (aiData.guion_escenas && Array.isArray(aiData.guion_escenas)) {
+          setGuionResult(prev => ({
+            ...prev,
+            titulo: aiData.titulo_principal || prev.titulo,
+            titulos_AB: aiData.titulos_alternativos_AB || prev.titulos_AB,
+            escenas: aiData.guion_escenas.map((sc: any, idx: number) => ({
+              numero_escena: idx + 1,
+              timestamp: sc.timestamp || `00:${idx * 15} - 00:${(idx + 1) * 15}`,
+              locucion_texto: sc.locucion_texto || "",
+              indicacion_broll: sc.indicacion_broll || "",
+              prompt_imagen_ingles: sc.prompt_imagen_ingles || ""
+            }))
+          }));
+        }
+
+        // 2. Update Metadata State
+        if (aiData.seo) {
+          setMetadataResult(prev => ({
+            ...prev,
+            descripcion_optimizada: aiData.seo.descripcion_optimizada || prev.descripcion_optimizada,
+            tags_lista: aiData.seo.tags_lista || prev.tags_lista,
+            hashtags: aiData.seo.hashtags || prev.hashtags
+          }));
+        }
+
+        // 3. Update Branding State
+        if (aiData.branding_sugerido) {
+          setBrandingResult(prev => ({
+            ...prev,
+            nombre_canal: aiData.branding_sugerido.nombre_canal || prev.nombre_canal,
+            concepto: aiData.branding_sugerido.concepto || prev.concepto,
+            paleta_hex: aiData.branding_sugerido.paleta_hex || prev.paleta_hex
+          }));
+        }
+
+        // 4. Update Strategy Result State
+        setStrategyResult(prev => ({
+          ...prev,
+          titulo: aiData.titulo_principal || prev.titulo,
+          nicho: onboardingNiche || prev.nicho
+        }));
+
+        setToastMessage(`⚡ Guión e Identidad IA actualizados para "${transcript.substring(0, 25)}..." (-10 Créditos)`);
+        setTimeout(() => setToastMessage(null), 4000);
+      }
+    } catch (err: any) {
+      console.warn("Error generando guion:", err);
+      const errMsg = err?.message || "No se pudo establecer conexión con la API de IA en localhost:3001.";
+      setApiErrorMsg(errMsg);
+      setToastMessage(`⚠️ Error de conexión API IA: ${errMsg}`);
+      setTimeout(() => setToastMessage(null), 5000);
+    } finally {
       setIsAnalyzing(false);
-    }, 600);
+    }
   };
 
   const handleExtractFromChannel = (channel: SavedChannel) => {
@@ -2036,10 +2130,10 @@ export default function App() {
             <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
                 <Flame className="w-4 h-4 text-amber-400 animate-pulse" />
-                <span>Nicho Objetivo: <strong className="text-cyan-300">Finanzas Personales e Inversiones para Jóvenes</strong></span>
+                <span>Nicho Objetivo: <strong className="text-cyan-300">{onboardingNiche || strategyResult.nicho || 'Finanzas & Tecnología'}</strong></span>
               </div>
               <button
-                onClick={handleSimulateAnalyze}
+                onClick={handleAnalyzeConcept}
                 disabled={isAnalyzing}
                 className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-black font-extrabold text-xs rounded-xl shadow-[0_0_20px_rgba(0,240,255,0.4)] flex items-center gap-2 transition-all duration-300 hover:scale-[1.02] active:scale-95 disabled:opacity-50"
               >
@@ -2056,6 +2150,19 @@ export default function App() {
                 )}
               </button>
             </div>
+
+            {apiErrorMsg && (
+              <div className="mt-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/40 text-rose-300 text-xs font-mono flex items-start gap-3 shadow-[0_0_20px_rgba(244,63,94,0.2)]">
+                <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <strong className="text-white block font-bold">⚠️ FALLO DE CONEXIÓN O ERROR EN API DE IA</strong>
+                  <p>{apiErrorMsg}</p>
+                  <span className="text-[11px] text-slate-400 block pt-1">
+                    Nota: Asegúrate de tener configurada la variable <code className="text-cyan-300 font-bold bg-slate-900 px-1.5 py-0.5 rounded">GEMINI_API_KEY</code> o <code className="text-cyan-300 font-bold bg-slate-900 px-1.5 py-0.5 rounded">NEXT_PUBLIC_GEMINI_API_KEY</code> en tu archivo <code className="text-cyan-300 font-bold bg-slate-900 px-1.5 py-0.5 rounded">.env</code>.
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
