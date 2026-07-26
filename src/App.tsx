@@ -910,7 +910,17 @@ export default function App() {
         })
       });
 
-      const resData = await response.json();
+      const responseText = await response.text();
+      let resData: any = {};
+      try {
+        resData = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        const errorDetail = `Respuesta no válida del servidor (HTTP ${response.status}). Verifica que el servidor backend (npm run server) esté corriendo en el puerto 3001.`;
+        setApiErrorMsg(errorDetail);
+        setToastMessage(`⚠️ Error en respuesta API: ${errorDetail}`);
+        setTimeout(() => setToastMessage(null), 5000);
+        return;
+      }
 
       if (!response.ok || !resData.success) {
         const errorDetail = resData.error || resData.message || `Error HTTP ${response.status}: No se pudo procesar la solicitud con Gemini API.`;
