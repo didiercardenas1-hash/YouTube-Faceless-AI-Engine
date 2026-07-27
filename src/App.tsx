@@ -859,8 +859,6 @@ export default function App() {
             nicheName: targetNiche,
             topViralIdeas: data.data.topViralIdeas
           }));
-          setActiveTab('niche_explorer');
-          setToastMessage(`🔥 ¡Top 50 Videos Virales en Vivo cargados exitosamente para "${targetNiche}"!`);
         }
       } else {
         const errJson = await res.json();
@@ -875,10 +873,9 @@ export default function App() {
   };
 
   const handleCloneViralStrategy = (videoTitle: string, videoConcept: string) => {
-    setTranscript(`Estrategia Clonada de Video Viral: "${videoTitle}". Concepto Clave: ${videoConcept}. Generar guión Faceless optimizado en español para alto CTR y retención.`);
-    setActiveTab('script');
-    setToastMessage(`⚡ ¡Estrategia de "${videoTitle.substring(0, 35)}..." cargada! Redirigiendo a Guión...`);
-    setTimeout(() => setToastMessage(null), 3500);
+    const cleanTopic = `${videoTitle}. ${videoConcept}`;
+    setTranscript(cleanTopic);
+    handleAnalyzeConcept(cleanTopic);
   };
 
   const handleCopy = (text: string, sectionKey: string) => {
@@ -927,8 +924,9 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  const handleAnalyzeConcept = async () => {
-    if (!transcript.trim()) return;
+  const handleAnalyzeConcept = async (overrideConcept?: string) => {
+    const targetTopic = (overrideConcept || transcript).trim();
+    if (!targetTopic) return;
 
     if (userCredits < 10) {
       setShowUpgradeModal(true);
@@ -938,13 +936,14 @@ export default function App() {
     }
 
     setIsAnalyzing(true);
+    setActiveTab('script');
     try {
       const response = await fetch('/api/ai/generate-script', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          idea: transcript,
-          niche: onboardingNiche || 'Finanzas & Tecnología',
+          idea: targetTopic,
+          niche: onboardingNiche || 'General',
           userEmail: activationEmail || 'didier@facelessai.io'
         })
       });
@@ -982,10 +981,10 @@ export default function App() {
           setUserCredits(prev => Math.max(0, prev - 10));
         }
 
-        const mainTitle = aiData.tituloSEO || aiData.titulo_principal || `Estrategia y Guión sobre "${transcript}"`;
+        const mainTitle = aiData.tituloSEO || aiData.titulo_principal || `Estrategia y Guión sobre "${targetTopic}"`;
         const altTitles = aiData.titulos_alternativos_AB || aiData.titulos_alternativos_ab || [
-          `Cómo Dominar ${transcript} en 2026: Estrategias que Nadie te Enseña`,
-          `El Impacto Oculto de ${transcript}: Lo que los Expertos No Quieren que Sepas`
+          `La Verdad Sobre ${targetTopic}`,
+          `Cómo Dominar ${targetTopic}`
         ];
 
         // 1. Update Guion State (supporting both guion object & guion_escenas array)
@@ -1050,7 +1049,7 @@ export default function App() {
               bloque: `Escena ${idx + 1}: ${sc.indicacion_broll ? sc.indicacion_broll.substring(0, 30) : 'Desarrollo'}...`,
               locucion_texto: sc.locucion_texto || "",
               indicacion_broll: sc.indicacion_broll || "",
-              prompt_generador_imagen_en: sc.prompt_imagen_ingles || sc.prompt_generador_imagen_en || `Cinematic HD 16:9 visualization for ${transcript}, glowing neon 8k render`,
+              prompt_generador_imagen_en: sc.prompt_imagen_ingles || sc.prompt_generador_imagen_en || "Dark cinematic animated style, 8k render",
               prompt_imagen_ingles: sc.prompt_imagen_ingles || ""
             }))
           }));
@@ -1074,14 +1073,14 @@ export default function App() {
             nombre_canal: brand.nombre_canal || prev.nombre_canal,
             concepto: brand.concepto || prev.concepto,
             nombres_canal_sugeridos: [
-              brand.nombre_canal || `${transcript.split(' ')[0]} HQ`,
-              `${transcript.split(' ')[0]} Élite`,
-              `Imperio ${transcript.split(' ')[0]}`
+              brand.nombre_canal || `${targetTopic.split(' ')[0]} HQ`,
+              `${targetTopic.split(' ')[0]} Élite`,
+              `Imperio ${targetTopic.split(' ')[0]}`
             ],
-            descripcion_canal_seo: brand.concepto ? `Bienvenido al canal oficial de ${brand.nombre_canal || transcript}. ${brand.concepto} Suscríbete para recibir contenido exclusivo.` : prev.descripcion_canal_seo,
+            descripcion_canal_seo: brand.concepto ? `Bienvenido al canal oficial de ${brand.nombre_canal || targetTopic}. ${brand.concepto} Suscríbete para recibir contenido exclusivo.` : prev.descripcion_canal_seo,
             paleta_colores_hex: brand.paleta_hex || prev.paleta_colores_hex || ["#00F0FF", "#8A2BE2", "#00FF88", "#07090E"],
-            prompt_logo_en: `Minimalist vector logo for ${transcript}, sharp neon geometry, 8k render`,
-            prompt_banner_en: `Sleek panoramic 16:9 YouTube channel banner for ${transcript}, dark glowing neon theme`
+            prompt_logo_en: `Minimalist vector logo for ${targetTopic}, sharp neon geometry, 8k render`,
+            prompt_banner_en: `Sleek panoramic 16:9 YouTube channel banner for ${targetTopic}, dark glowing neon theme`
           }));
         }
 
@@ -1089,12 +1088,12 @@ export default function App() {
         setStrategyResult(prev => ({
           ...prev,
           titulo: mainTitle,
-          nicho: transcript,
-          diagnostico_viral: `El tema "${transcript}" destaca por apelar a la curiosidad inmediata y la búsqueda activa de contenido especializado en YouTube.`,
-          nuevo_concepto: aiData.branding_sugerido?.concepto || `Replicar la estructura de curiosidad aplicando edición Faceless dinámica para el nicho ${transcript}.`,
-          gancho_3_segundos: aiData.guion?.hook || aiData.guion_escenas?.[0]?.locucion_texto || `El 99% de las personas comete un error fatal sobre ${transcript}...`,
-          prompt_miniatura_en: aiData.promptsVisuales?.[0] || `Cinematic high contrast shot about ${transcript}, glowing neon cyan lighting, 8k render`,
-          texto_sobre_miniatura: `LA VERDAD SOBRE ${transcript.toUpperCase().substring(0, 18)}`,
+          nicho: targetTopic,
+          diagnostico_viral: `El tema "${targetTopic}" destaca por apelar a la curiosidad inmediata y la búsqueda activa de contenido especializado en YouTube.`,
+          nuevo_concepto: aiData.branding_sugerido?.concepto || `Replicar la estructura de curiosidad aplicando edición Faceless dinámica para el nicho ${targetTopic}.`,
+          gancho_3_segundos: aiData.guion?.hook || aiData.guion_escenas?.[0]?.locucion_texto || `Revelación clave sobre ${targetTopic}...`,
+          prompt_miniatura_en: aiData.promptsVisuales?.[0] || "Cinematic high contrast shot, glowing neon cyan lighting, 8k render",
+          texto_sobre_miniatura: `LA VERDAD SOBRE ${targetTopic.toUpperCase().substring(0, 18)}`,
           titulos_sugeridos: altTitles,
           keywords_seo: aiData.etiquetas || aiData.seo?.tags_lista || prev.keywords_seo
         }));

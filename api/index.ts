@@ -82,58 +82,58 @@ function buildDynamicScript(promptText: string, nicheText?: string) {
   const targetNiche = nicheText || 'General';
 
   return {
-    tituloSEO: `${topic}: Revelaciones y Guía Completa`,
-    descripcionSEO: `Análisis en profundidad sobre ${topic}. Descubre conceptos clave, estrategias actuales y mejores prácticas.\n\n⏱️ MARCAS DE TIEMPO:\n00:00 - Hook / Revelación\n00:15 - Introducción\n00:45 - Desarrollo Principal\n02:15 - Conclusión y CTA\n\n#${topic.replace(/\s+/g, '')} #YouTubeFaceless #Viral`,
-    etiquetas: [topic, targetNiche, "viral youtube", "canales faceless", "automatizacion ia"],
+    tituloSEO: `Revelaciones Inéditas sobre ${topic}`,
+    descripcionSEO: `Guía estratégica y análisis completo sobre ${topic}. Descubre los conceptos clave para potenciar tu contenido en 2026.\n\n⏱️ MARCAS DE TIEMPO:\n00:00 - Gancho Inicial\n00:15 - Contexto e Historia\n00:45 - Análisis y Puntos Clave\n02:15 - Cierre y Conclusión\n\n#${topic.replace(/[^a-zA-Z0-9]/g, '')} #YouTubeFaceless #Viral2026`,
+    etiquetas: [topic, targetNiche, "faceless AI", "estrategia viral", "contenido automatizado"],
     guion: {
-      hook: `En este video analizaremos todo lo relacionado con ${topic} y los secretos que transforman este tema.`,
-      introduccion: `Al examinar el contenido sobre ${topic}, descubrimos patrones fundamentales que captan la atención inmediatamente.`,
-      cuerpo: `En primer lugar, la claridad narrativa es esencial. En segundo lugar, los apoyos visuales B-roll aumentan la retención. Finalmente, mantener una estructura bien definida asegura que el espectador permanezca hasta el final.`,
-      llamadoALaAccion: `Si te ha servido esta guía sobre ${topic}, activa la campana y suscríbete para recibir más contenido exclusivo.`
+      hook: `Existe un misterio fascinante detrás de ${topic} que muy pocos han logrado descifrar hasta hoy.`,
+      introduccion: `Para comprender verdaderamente el impacto de este concepto, debemos explorar los elementos centrales que motivan el interés de la audiencia.`,
+      cuerpo: `La clave radica en tres pilares fundamentales: primero, la claridad del mensaje visual; segundo, el ritmo narrativo constante; y tercero, la entrega directa de valor sin rodeos innecesarios.`,
+      llamadoALaAccion: `Si te apasiona descubrir este tipo de secretos, asegúrate de suscribirte al canal y activar las notificaciones para no perderte nuestras próximas investigaciones.`
     },
     promptsVisuales: [
-      "Dark cinematic animated style, mysterious atmosphere, glowing purple light, 8k render",
-      "Futuristic digital interface, glowing cyan holographic data streams, high quality cinematic lighting",
-      "Epic dramatic cinematic scene, cinematic lighting, 8k resolution, octane render",
-      "High contrast YouTube Subscribe button animation with glowing neon lighting, studio background, 8k render"
+      "Cinematic close-up of futuristic holographic display glowing with vibrant purple ambient light, dark studio setting, 8k render, hyperrealistic",
+      "Sleek digital interface showing dynamic data visualization grid, cyan and violet neon tones, Octane render 16:9",
+      "Dramatic aerial shot of modern high-tech laboratory with soft volumetric lighting, cinematic mood, 8k resolution",
+      "Glossy YouTube Subscribe button animation glowing with gold notification bell, dark background, 3D render"
     ],
     configVoz: {
       tono: "Dramático / Educativo",
       velocidad: "1.0x"
     },
-    titulo_principal: `${topic}: Revelaciones y Guía Completa`,
+    titulo_principal: `Revelaciones Inéditas sobre ${topic}`,
     titulos_alternativos_AB: [
-      `La Verdad Sobre ${topic}`,
-      `Cómo Dominar ${topic}`
+      `La Verdad Oculta de ${topic}`,
+      `Guía Definitiva sobre ${topic}`
     ],
     guion_escenas: [
       {
         timestamp: "00:00 - 00:15",
-        locucion_texto: `En este video analizaremos todo lo relacionado con ${topic} y los secretos que transforman este tema.`,
-        indicacion_broll: "Secuencia cinematográfica de alto impacto",
-        prompt_imagen_ingles: "Dark cinematic animated style, mysterious atmosphere, glowing purple light, 8k render"
+        locucion_texto: `Existe un misterio fascinante detrás de ${topic} que muy pocos han logrado descifrar hasta hoy.`,
+        indicacion_broll: "Visual neón de alta calidad con iluminación cinematográfica",
+        prompt_imagen_ingles: "Cinematic close-up of futuristic holographic display glowing with vibrant purple ambient light, dark studio setting, 8k render, hyperrealistic"
       },
       {
         timestamp: "00:15 - 00:45",
-        locucion_texto: `Al examinar el contenido sobre ${topic}, descubrimos patrones fundamentales...`,
-        indicacion_broll: "B-roll explicativo dinámico",
-        prompt_imagen_ingles: "Futuristic digital interface, glowing cyan holographic data streams, high quality cinematic lighting"
+        locucion_texto: "Para comprender verdaderamente el impacto de este concepto, debemos explorar los elementos centrales...",
+        indicacion_broll: "B-roll explicativo con interfaz digital dinámica",
+        prompt_imagen_ingles: "Sleek digital interface showing dynamic data visualization grid, cyan and violet neon tones, Octane render 16:9"
       },
       {
         timestamp: "00:45 - 01:15",
-        locucion_texto: "En primer lugar, la claridad narrativa es esencial...",
-        indicacion_broll: "Visuales cinematográficos 4K",
-        prompt_imagen_ingles: "Epic dramatic cinematic scene, cinematic lighting, 8k resolution, octane render"
+        locucion_texto: "La clave radica en tres pilares fundamentales: claridad, ritmo y valor constante...",
+        indicacion_broll: "Toma cinematográfica aérea en alta resolución",
+        prompt_imagen_ingles: "Dramatic aerial shot of modern high-tech laboratory with soft volumetric lighting, cinematic mood, 8k resolution"
       }
     ],
     seo: {
-      descripcion_optimizada: `Análisis en profundidad sobre ${topic}.\n\n⏱️ MARCAS DE TIEMPO:\n00:00 - Hook\n00:15 - Introducción\n00:45 - Desarrollo`,
-      tags_lista: [topic, targetNiche, "viral youtube"],
-      hashtags: [`#${topic.replace(/\s+/g, '')}`, "#YouTubeFaceless"]
+      descripcion_optimizada: `Guía estratégica y análisis completo sobre ${topic}.\n\n⏱️ MARCAS DE TIEMPO:\n00:00 - Gancho\n00:15 - Contexto\n00:45 - Análisis`,
+      tags_lista: [topic, targetNiche, "faceless AI"],
+      hashtags: [`#${topic.replace(/[^a-zA-Z0-9]/g, '')}`, "#YouTubeFaceless"]
     },
     branding_sugerido: {
       nombre_canal: `${topic.split(' ')[0]} HQ`,
-      concepto: `Contenido sobre ${topic}`,
+      concepto: `Análisis e investigaciones estratégicas sobre ${topic}`,
       paleta_hex: ["#00F0FF", "#8A2BE2", "#00FF88", "#07090E"]
     }
   };
@@ -257,33 +257,33 @@ app.post('/api/ai/generate-script', async (req: Request, res: Response) => {
       });
     }
 
-    const systemPrompt = `Eres un guionista y estratega de contenido élite para YouTube Faceless AI Engine v3.6.
-Tu objetivo es interpretar la idea/concepto: "${topicPrompt}" dentro del nicho: "${niche || 'General'}" y redactar un guión 100% ORIGINAL, envolvente, fluido y completo desde cero.
+    const systemPrompt = `Eres un guionista y estratega de contenido élite para canales Faceless de YouTube.
+Tu tarea es actuar como un guionista profesional y redactar un guión 100% ORIGINAL, natural, fluido y libre sobre la idea/concepto: "${topicPrompt}" en el nicho: "${niche || 'General'}".
 
-NORMAS OBLIGATORIAS DE REDACCIÓN:
-1. NINGUNA PLANTILLA NI TEXTO HARDCODEADO: Redacta locuciones 100% únicas y originales según el tema. No uses la frase 'El 99% de las personas comete un error' ni 'adaptada al nicho'.
-2. ESTRUCTURA COMPLETA DE GUIÓN (guion):
-   - hook: Gancho magnético e impactante para los primeros 5 segundos.
-   - introduccion: Introducción envolvente que desarrolle la premisa inicial sin clichés.
-   - cuerpo: Desarrollo exhaustivo, fluido y estructurado con los datos y conceptos principales.
-   - llamadoALaAccion: Cierre épico que invite al espectador a suscribirse y comentar.
-3. PROMPTS DE IMAGEN INTELIGENTES (promptsVisuales): Genera entre 3 y 5 prompts de imagen en INGLÉS concisos, elegantes y puramente descriptivos de estilo cinematográfico (ejemplo: 'Dark cinematic animated style, mysterious atmosphere, glowing purple light, 8k render'). NUNCA pegues el título en español o frases concatenadas dentro del prompt.
+INSTRUCCIONES CRÍTICAS DE REDACCIÓN (PROHIBIDO USAR PLANTILLAS):
+1. NO USES FRASES FÓRMULA NI MOLDES HARDCODEADOS: Prohibido usar "En este video analizaremos todo lo relacionado con...", "Al examinar el contenido sobre...", "El 99% de las personas...", o "adaptada al nicho de...".
+2. REDACCIÓN PROFESIONAL DIRECTA:
+   - hook: Redacta un gancho orgánico, fascinante e impactante de 5 a 10 segundos.
+   - introduccion: Desarrolla el misterio o problema planteado de forma fluida y natural.
+   - cuerpo: Explica exhaustivamente los puntos clave del tema con narrativa envolvente de alta retención.
+   - llamadoALaAccion: Redacta una llamada a la acción limpia e impulsiva para suscribirse y comentar.
+3. PROMPTS VISUALES CONCISOS EN INGLÉS (promptsVisuales): Genera de 3 a 5 prompts de imagen EN INGLÉS puramente descriptivos y concisos de estilo cinematográfico (ejemplo: 'Cinematic close-up of neon glowing cryptocurrency chart, dark ambient atmosphere, 8k render'). NUNCA pegues títulos en español ni oraciones largas dentro de los prompts.
 
-Devuelve la respuesta en formato JSON strictly válido con la siguiente estructura exacta:
+Devuelve la respuesta en formato JSON estrictamente válido con el siguiente esquema:
 {
   "tituloSEO": "Título viral optimizado para CTR",
-  "descripcionSEO": "Descripción completa con marcas de tiempo (timestamps) y hashtags relevantes",
+  "descripcionSEO": "Descripción completa con marcas de tiempo (timestamps) y hashtags",
   "etiquetas": ["etiqueta1", "etiqueta2", "etiqueta3", "etiqueta4", "etiqueta5"],
   "guion": {
-    "hook": "Texto del hook impactante de 5 segundos...",
-    "introduccion": "Texto introductorio 100% original...",
-    "cuerpo": "Desarrollo completo y fluido del tema...",
-    "llamadoALaAccion": "Texto de cierre y llamado a la acción..."
+    "hook": "Texto del gancho inicial de 5-10 segundos...",
+    "introduccion": "Texto introductorio fluido sin clichés...",
+    "cuerpo": "Desarrollo completo y envolvente del tema...",
+    "llamadoALaAccion": "Texto de cierre y CTA..."
   },
   "promptsVisuales": [
-    "Dark cinematic animated style, mysterious atmosphere, glowing purple light, 8k render",
-    "Futuristic digital interface, glowing cyan holographic data streams, high quality cinematic lighting",
-    "Epic dramatic cinematic scene, cinematic lighting, 8k resolution, octane render"
+    "Cinematic close-up of neon glowing cryptocurrency chart, dark ambient atmosphere, 8k render",
+    "Futuristic holographic interface with cyan data streams, octane render, 16:9",
+    "Dramatic cinematic lighting shot of high tech lab, photorealistic, 8k"
   ],
   "configVoz": {
     "tono": "Dramático / Misterioso / Educativo",
