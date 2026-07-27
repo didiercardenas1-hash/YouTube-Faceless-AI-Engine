@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { GoogleGenAI } from '@google/genai';
+import { YoutubeTranscript } from 'youtube-transcript';
 
 const app = express();
 app.use(cors());
@@ -233,9 +234,48 @@ app.post('/api/checkout', (req: Request, res: Response) => {
   });
 });
 
-// 4. SCRIPT & AI GENERATION ENDPOINT
+async function fetchYouTubeTranscript(videoIdOrUrl: string): Promise<string> {
+  if (!videoIdOrUrl) return '';
+  try {
+    const transcriptItems = await YoutubeTranscript.fetchTranscript(videoIdOrUrl);
+    if (transcriptItems && Array.isArray(transcriptItems) && transcriptItems.length > 0) {
+      return transcriptItems.map((item: any) => item.text).join(' ');
+    }
+  } catch (err: any) {
+    console.warn(`[YouTube Transcript Warning] ${videoIdOrUrl}:`, err?.message || err);
+  }
+  return '';
+}
+
+// 4. TRANSCRIPT EXTRACTION ENDPOINT
+app.post('/api/transcript', async (req: Request, res: Response) => {
+  const { videoId, videoUrl } = req.body || {};
+  const target = videoId || videoUrl;
+
+  if (!target) {
+    return res.status(400).json({ error: 'videoId o videoUrl es requerido.', success: false });
+  }
+
+  try {
+    const transcriptText = await fetchYouTubeTranscript(target);
+    return res.json({
+      success: true,
+      videoId: target,
+      transcript: transcriptText,
+      hasTranscript: transcriptText.length > 0,
+      length: transcriptText.length
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      error: `Error al extraer transcripción: ${err.message || err}`,
+      success: false
+    });
+  }
+});
+
+// 5. SCRIPT & AI GENERATION ENDPOINT
 app.post('/api/ai/generate-script', async (req: Request, res: Response) => {
-  const { idea, videoUrl, niche, userEmail } = req.body || {};
+  const { idea, videoId, videoUrl, transcript: inputTranscript, niche, userEmail } = req.body || {};
   const email = userEmail || 'didier@facelessai.io';
 
   const deduction = deductUserCredits(email, 10, 'GENERACION_GUION_COMPLETO');
@@ -243,7 +283,14 @@ app.post('/api/ai/generate-script', async (req: Request, res: Response) => {
     return res.status(402).json({ error: deduction.message, success: false });
   }
 
-  const topicPrompt = idea || (videoUrl ? `Analiza este video de competencia: ${videoUrl}` : 'Concepto de video viral');
+  const targetVideo = videoId || videoUrl;
+  let realTranscript = inputTranscript || '';
+
+  if (!realTranscript && targetVideo) {
+    realTranscript = await fetchYouTubeTranscript(targetVideo);
+  }
+
+  const topicPrompt = idea || (targetVideo ? `Analiza este video: ${targetVideo}` : 'Concepto de video viral');
 
   try {
     if (!ai) {
@@ -257,7 +304,33 @@ app.post('/api/ai/generate-script', async (req: Request, res: Response) => {
       });
     }
 
-    const systemPrompt = `Eres un guionista y estratega de contenido élite para canales Faceless de YouTube.
+    let systemPrompt = '';
+    if (realTranscript && realTranscript.trim().length > 0) {
+      systemPrompt = `Aquí tienes la transcripción real de un video viral: "${realTranscript.substring(0, 8000)}". Analiza la historia/concepto central y redacta un guion totalmente nuevo, fluido y original para YouTube Faceless estructurado en JSON (Hook, Introducción, Cuerpo, CTA y prompts de imagen en inglés). No copies las frases textualmente, adáptalo para alto impacto.
+
+Devuelve la respuesta en formato JSON estrictamente válido con la siguiente estructura exacta:
+{
+  "tituloSEO": "Título viral optimizado para CTR",
+  "descripcionSEO": "Descripción completa con marcas de tiempo (timestamps) y hashtags relevantes",
+  "etiquetas": ["etiqueta1", "etiqueta2", "etiqueta3", "etiqueta4", "etiqueta5"],
+  "guion": {
+    "hook": "Texto del gancho inicial de 5-10 segundos...",
+    "introduccion": "Texto introductorio fluido sin clichés...",
+    "cuerpo": "Desarrollo completo y envolvente del tema...",
+    "llamadoALaAccion": "Texto de cierre y CTA..."
+  },
+  "promptsVisuales": [
+    "Cinematic close-up of neon glowing cryptocurrency chart, dark ambient atmosphere, 8k render",
+    "Futuristic holographic interface with cyan data streams, octane render, 16:9",
+    "Dramatic cinematic lighting shot of high tech lab, photorealistic, 8k"
+  ],
+  "configVoz": {
+    "tono": "Dramático / Misterioso / Educativo",
+    "velocidad": "1.0x"
+  }
+}`;
+    } else {
+      systemPrompt = `Eres un guionista y estratega de contenido élite para canales Faceless de YouTube.
 Tu tarea es actuar como un guionista profesional y redactar un guión 100% ORIGINAL, natural, fluido y libre sobre la idea/concepto: "${topicPrompt}" en el nicho: "${niche || 'General'}".
 
 INSTRUCCIONES CRÍTICAS DE REDACCIÓN (PROHIBIDO USAR PLANTILLAS):
@@ -290,6 +363,7 @@ Devuelve la respuesta en formato JSON estrictamente válido con el siguiente esq
     "velocidad": "1.0x"
   }
 }`;
+    }
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.0-flash',
@@ -307,6 +381,7 @@ Devuelve la respuesta en formato JSON estrictamente válido con el siguiente esq
       source: 'gemini-2.0-flash',
       credits_deducted: 10,
       remaining_credits: deduction.remainingCredits,
+      has_real_transcript: Boolean(realTranscript && realTranscript.length > 0),
       data: parsedData
     });
   } catch (error: any) {
@@ -321,7 +396,7 @@ Devuelve la respuesta en formato JSON estrictamente válido con el siguiente esq
   }
 });
 
-// 5. YOUTUBE API ENDPOINTS
+// 6. YOUTUBE API ENDPOINTS
 app.post('/api/youtube/track-channel', async (req: Request, res: Response) => {
   const { url, handle } = req.body || {};
   const query = (handle ? handle.replace('@', '') : (url ? url.split('/').pop()?.replace('@', '') : 'terror')).trim();
