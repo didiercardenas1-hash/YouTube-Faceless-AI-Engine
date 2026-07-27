@@ -877,6 +877,17 @@ app.post('/api/admin/generate-key', (req: Request, res: Response) => {
 // Serve static files
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
+// Global Error Handler Middleware (Guarantees valid JSON error response on any exception)
+app.use((err: any, req: Request, res: Response, next: any) => {
+  console.error("Unhandled Express Error:", err);
+  if (!res.headersSent) {
+    res.status(500).json({
+      error: err.message || 'Error interno del servidor backend.',
+      success: false
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`⚡ YouTube Faceless AI Engine Backend corriendo en http://localhost:${PORT}`);
 });
