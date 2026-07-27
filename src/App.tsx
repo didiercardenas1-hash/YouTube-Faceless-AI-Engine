@@ -851,10 +851,10 @@ export default function App() {
     }
   };
 
-  const handleCloneViralStrategy = (videoTitle: string, videoConcept: string) => {
-    const cleanTopic = `${videoTitle}. ${videoConcept}`;
-    setTranscript(cleanTopic);
-    handleAnalyzeConcept(cleanTopic);
+  const handleCloneViralStrategy = (videoTitle: string, videoConcept?: string) => {
+    const cleanTitle = sanitizeInputText(videoTitle);
+    setTranscript(cleanTitle);
+    handleAnalyzeConcept(cleanTitle);
   };
 
   const handleCopy = (text: string, sectionKey: string) => {
@@ -903,8 +903,23 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
+  function sanitizeInputText(rawText: string): string {
+    if (!rawText) return '';
+    let text = String(rawText);
+    text = text.replace(/^Estrategia Clonada de Video Viral:\s*"?/gi, '');
+    text = text.replace(/^Análisis de Video Viral:\s*"?/gi, '');
+    text = text.replace(/^Concepto oficial extraído de YouTube:?\s*"?/gi, '');
+    text = text.replace(/\s*\.\s*Concepto Clave:.*$/gi, '');
+    text = text.replace(/\s*Detalles:.*$/gi, '');
+    text = text.replace(/#[\wáéíóúñÁÉÍÓÚÑ]+/gi, '');
+    text = text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
+    text = text.replace(/^[":\s]+|[":\s]+$/g, '').replace(/\s+/g, ' ').trim();
+    return text || 'Historia Viral Relevante';
+  }
+
   const handleAnalyzeConcept = async (overrideConcept?: string) => {
-    const targetTopic = (overrideConcept || transcript).trim();
+    const rawTopic = (overrideConcept || transcript).trim();
+    const targetTopic = sanitizeInputText(rawTopic);
     if (!targetTopic) return;
 
     if (userCredits < 10) {
@@ -960,10 +975,11 @@ export default function App() {
           setUserCredits(prev => Math.max(0, prev - 10));
         }
 
-        const mainTitle = aiData.tituloSEO || aiData.titulo_principal || `Estrategia y Guión sobre "${targetTopic}"`;
+        const rawTitle = aiData.tituloSEO || aiData.titulo_principal || `Estrategia y Guión sobre "${targetTopic}"`;
+        const mainTitle = sanitizeInputText(rawTitle);
         const altTitles = aiData.titulos_alternativos_AB || aiData.titulos_alternativos_ab || [
-          `La Verdad Sobre ${targetTopic}`,
-          `Cómo Dominar ${targetTopic}`
+          `La Verdadera Historia de ${targetTopic}`,
+          `Revelaciones Inéditas de ${targetTopic}`
         ];
 
         // 1. Update Guion State (supporting both guion object & guion_escenas array)
