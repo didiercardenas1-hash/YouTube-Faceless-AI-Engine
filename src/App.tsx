@@ -441,6 +441,9 @@ export default function App() {
           userPlan
         })
       });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
       const data = await response.json();
       if (data.audioUrl) {
         setTtsAudioMap(prev => ({ ...prev, [sceneNumber]: data.audioUrl }));
@@ -475,6 +478,9 @@ export default function App() {
           userEmail: activationEmail || 'didier@facelessai.io'
         })
       });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
       const data = await response.json();
       if (data.imageUrl) {
         setGeneratedThumbnailUrl(data.imageUrl);
