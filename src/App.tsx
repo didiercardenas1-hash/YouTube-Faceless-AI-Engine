@@ -921,7 +921,7 @@ export default function App() {
       try {
         resData = responseText ? JSON.parse(responseText) : {};
       } catch {
-        const errorDetail = `Respuesta no válida del servidor (HTTP ${response.status}). Verifica que el servidor backend (npm run server) esté corriendo en el puerto 3001.`;
+        const errorDetail = `Respuesta no válida de la API (HTTP ${response.status}).`;
         setApiErrorMsg(errorDetail);
         setToastMessage(`⚠️ Error en respuesta API: ${errorDetail}`);
         setTimeout(() => setToastMessage(null), 5000);
@@ -1079,7 +1079,7 @@ export default function App() {
       }
     } catch (err: any) {
       console.warn("Error generando guion:", err);
-      const errMsg = err?.message || "No se pudo establecer conexión con la API de IA en localhost:3001.";
+      const errMsg = err?.message || "No se pudo establecer conexión con la API de IA.";
       setApiErrorMsg(errMsg);
       setToastMessage(`⚠️ Error de conexión API IA: ${errMsg}`);
       setTimeout(() => setToastMessage(null), 5000);
