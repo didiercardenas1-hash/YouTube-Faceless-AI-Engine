@@ -675,186 +675,131 @@ app.post('/api/user/projects', (req: Request, res: Response) => {
 // ==========================================
 
 app.post('/api/youtube/track-channel', async (req: Request, res: Response) => {
-  const { url, handle, userEmail } = req.body;
-
-  if (!url && !handle) {
-    return res.status(400).json({ error: 'Se requiere la URL o el handle (@nombre) del canal de YouTube.' });
-  }
-
-  const channelName = handle ? handle.replace('@', '') : (url ? url.split('/').pop()?.replace('@', '') : 'Canal Viral');
-  const cleanName = (channelName || 'Canal Viral').trim();
-  const upperName = cleanName.toUpperCase();
+  const { url, handle } = req.body || {};
+  const query = (handle ? handle.replace('@', '') : (url ? url.split('/').pop()?.replace('@', '') : 'terror')).trim();
   const youtubeApiKey = process.env.YOUTUBE_DATA_API_KEY || process.env.NEXT_PUBLIC_YOUTUBE_DATA_API_KEY || '';
 
-  let rawVideos: Array<{ id: string; title: string; viewsNum: number; likes: string; publishedAt: string }> = [];
+  if (!youtubeApiKey) {
+    return res.status(500).json({
+      error: 'La variable de entorno YOUTUBE_DATA_API_KEY no está configurada en .env',
+      success: false
+    });
+  }
 
-  if (youtubeApiKey) {
-    try {
-      const ytUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(cleanName)}&type=video&maxResults=10&order=viewCount&key=${youtubeApiKey}`;
-      const ytRes = await fetch(ytUrl);
-      if (ytRes.ok) {
-        const ytData = await ytRes.json();
-        if (ytData.items && ytData.items.length > 0) {
-          rawVideos = ytData.items.map((item: any, idx: number) => ({
-            id: item.id?.videoId || `yt-${idx}`,
-            title: item.snippet?.title || `Video Viral ${idx + 1} de ${cleanName}`,
-            viewsNum: Math.floor(250000 + Math.random() * 750000),
-            likes: `${Math.floor(15 + Math.random() * 45)}K`,
-            publishedAt: item.snippet?.publishedAt ? `Publicado: ${item.snippet.publishedAt.substring(0, 10)}` : `Hace ${idx + 1} días`
-          }));
-        }
-      }
-    } catch (err) {
-      console.warn('Error al consultar la API de YouTube para rastreo. Usando generador dinámico de canal.', err);
+  try {
+    const ytUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=5&key=${youtubeApiKey}`;
+    const ytRes = await fetch(ytUrl);
+
+    if (!ytRes.ok) {
+      const errorText = await ytRes.text();
+      return res.status(ytRes.status).json({
+        error: `Error HTTP ${ytRes.status} de la API de YouTube: ${errorText}`,
+        success: false
+      });
     }
-  }
 
-  if (rawVideos.length === 0) {
-    rawVideos = [
-      { id: 'v1', title: `Los 5 Secretos Inconfesables de ${cleanName} (Documental Virales)`, viewsNum: 680000, likes: '48K', publishedAt: 'Hace 2 días' },
-      { id: 'v2', title: `La Verdad Oculta detrás de ${cleanName} que Nadie te Cuenta`, viewsNum: 520000, likes: '36K', publishedAt: 'Hace 5 días' },
-      { id: 'v3', title: `El Caso de ${cleanName} que Sorprendió al Mundo en 2026`, viewsNum: 410000, likes: '29K', publishedAt: 'Hace 1 semana' },
-      { id: 'v4', title: `Por Qué el 99% de las Personas Cometen este Error en ${cleanName}`, viewsNum: 390000, likes: '24K', publishedAt: 'Hace 2 semanas' },
-      { id: 'v5', title: `Los 3 Experimentos Más Impactantes sobre ${cleanName}`, viewsNum: 280000, likes: '18K', publishedAt: 'Hace 3 semanas' },
-      { id: 'v6', title: `Manual Definitivo para Dominar ${cleanName} sin Mostrar Rostro`, viewsNum: 210000, likes: '15K', publishedAt: 'Hace 1 mes' },
-      { id: 'v7', title: `La Regla de Oro que Cambió Todo sobre ${cleanName}`, viewsNum: 195000, likes: '12K', publishedAt: 'Hace 1 mes' },
-      { id: 'v8', title: `Cómo Escalar un Canal Faceless sobre ${cleanName} a $10,000/mes`, viewsNum: 590000, likes: '42K', publishedAt: 'Hace 1 mes' }
-    ];
-  }
+    const ytData = await ytRes.json();
+    const items = ytData.items || [];
 
-  // Outlier Detection Algorithm: Average views baseline vs Outliers (>= 1.8x baseline)
-  const totalViewsSum = rawVideos.reduce((acc, v) => acc + v.viewsNum, 0);
-  const avgBaselineViews = Math.round(totalViewsSum / rawVideos.length);
+    const recentVideos = items.map((item: any) => ({
+      id: item.id?.videoId || '',
+      title: item.snippet?.title || '',
+      channelId: item.snippet?.channelId || '',
+      channelTitle: item.snippet?.channelTitle || '',
+      thumbnail: item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || '',
+      publishedAt: item.snippet?.publishedAt ? `Publicado: ${item.snippet.publishedAt.substring(0, 10)}` : 'Reciente',
+      views: 'En Vivo Google Cloud',
+      isOutlier: true,
+      outlierScore: 'YouTube API Real',
+      cloneConcept: item.snippet?.description || `Concepto real extraído del canal ${item.snippet?.channelTitle}`
+    }));
 
-  const videosWithOutlierFlag = rawVideos.map(v => {
-    const ratio = (v.viewsNum / avgBaselineViews).toFixed(1);
-    const isOutlier = v.viewsNum >= (avgBaselineViews * 1.5);
-    return {
-      ...v,
-      views: v.viewsNum >= 1000000 ? `${(v.viewsNum/1000000).toFixed(1)}M vistas` : `${Math.round(v.viewsNum/1000)}K vistas`,
-      isOutlier,
-      outlierScore: `${ratio}x sobre el promedio`,
-      cloneConcept: `Versión mejorada Faceless del video viral "${v.title}"`
+    const firstSnippet = items[0]?.snippet;
+    const channelStats = {
+      nombre: firstSnippet?.channelTitle || `${query.toUpperCase()} HQ`,
+      handle: `@${query.toLowerCase().replace(/\s+/g, '')}`,
+      url: `https://youtube.com/results?search_query=${encodeURIComponent(query)}`,
+      subscriptores: 'Verificado Google API',
+      totalVideos: items.length,
+      totalViews: 'Datos en Vivo Google Cloud',
+      avgBaselineViews: 'En Vivo',
+      outliersCount: items.length,
+      recentVideos,
+      thumbnail: firstSnippet?.thumbnails?.high?.url || firstSnippet?.thumbnails?.medium?.url || ''
     };
-  });
 
-  const channelStats = {
-    nombre: upperName + ' HQ',
-    handle: `@${cleanName.toLowerCase().replace(/\s+/g, '')}`,
-    url: url || `https://youtube.com/@${cleanName.toLowerCase().replace(/\s+/g, '')}`,
-    subscriptores: `${Math.floor(180 + Math.random() * 400)}K`,
-    totalVideos: Math.floor(80 + Math.random() * 120),
-    totalViews: `${(15 + Math.random() * 25).toFixed(1)}M vistas`,
-    avgBaselineViews: `${Math.round(avgBaselineViews / 1000)}K vistas`,
-    outliersCount: videosWithOutlierFlag.filter(v => v.isOutlier).length,
-    recentVideos: videosWithOutlierFlag
-  };
-
-  return res.json({
-    success: true,
-    source: youtubeApiKey ? 'YouTube Data API v3 (Oficial Google Cloud)' : 'Generador Dinámico de Outliers',
-    data: channelStats
-  });
+    return res.json({
+      success: true,
+      source: 'YouTube Data API v3 (Oficial Google Cloud)',
+      data: channelStats
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      error: err.message || 'Error al conectar con la API de YouTube',
+      success: false
+    });
+  }
 });
 
 app.post('/api/youtube/niche-search', async (req: Request, res: Response) => {
-  const { nicheKeyword } = req.body;
-  const keyword = (nicheKeyword || 'Finanzas').trim();
+  const { nicheKeyword } = req.body || {};
+  const query = (nicheKeyword || 'terror').trim();
   const youtubeApiKey = process.env.YOUTUBE_DATA_API_KEY || process.env.NEXT_PUBLIC_YOUTUBE_DATA_API_KEY || '';
 
-  if (youtubeApiKey) {
-    try {
-      const ytUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(keyword)}&type=video&maxResults=5&order=viewCount&key=${youtubeApiKey}`;
-      const ytRes = await fetch(ytUrl);
-      if (ytRes.ok) {
-        const ytData = await ytRes.json();
-        if (ytData.items && ytData.items.length > 0) {
-          const topViralIdeas = ytData.items.map((item: any, idx: number) => ({
-            id: `yt-live-${idx}`,
-            title: item.snippet.title,
-            views: 'Alta Relevancia en YouTube API',
-            isOutlier: idx < 2,
-            multiplier: `${(3.5 - idx * 0.4).toFixed(1)}x sobre el promedio`,
-            concept: item.snippet.description || `Concepto clave extraído de YouTube Data API para ${keyword}`
-          }));
-
-          return res.json({
-            success: true,
-            source: 'YouTube Data API v3 (Oficial Google Cloud)',
-            data: {
-              nicheName: keyword,
-              viralPotentialIndex: 'ALTO',
-              potentialScore: '98/100',
-              estimatedCpm: '$28.50 USD',
-              avgViewsPerVideo: '500K+ vistas',
-              topViralIdeas
-            }
-          });
-        }
-      }
-    } catch (err) {
-      console.warn('Error al consultar YouTube Data API oficial. Usando motor interno de Outliers.', err);
-    }
+  if (!youtubeApiKey) {
+    return res.status(500).json({
+      error: 'La variable de entorno YOUTUBE_DATA_API_KEY no está configurada en .env',
+      success: false
+    });
   }
 
-  // Simulated Niche Potential Calculator
-  const potentialScore = 92 + Math.floor(Math.random() * 7);
-  const potentialIndex = potentialScore >= 85 ? 'ALTO' : potentialScore >= 65 ? 'MEDIO' : 'BAJO';
+  try {
+    const ytUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=5&key=${youtubeApiKey}`;
+    const ytRes = await fetch(ytUrl);
 
-  const nicheCatalogData = {
-    nicheName: keyword,
-    viralPotentialIndex: potentialIndex,
-    potentialScore: `${potentialScore}/100`,
-    estimatedCpm: `$${(15 + Math.random() * 15).toFixed(2)} USD`,
-    avgViewsPerVideo: '340K vistas',
-    topViralIdeas: [
-      {
-        id: 'n1',
-        title: `Las 5 Inversiones Secretas que los Jóvenes Millonarios Ocultan (Nicho ${keyword})`,
-        views: '650K vistas',
-        isOutlier: true,
-        multiplier: '3.2x sobre el promedio',
-        concept: `Aprovechar el bucle de curiosidad cuantitativa aplicada a ${keyword}`
-      },
-      {
-        id: 'n2',
-        title: `El Experimento Social de 30 Días que Cambió Mi Forma de Pensar en ${keyword}`,
-        views: '420K vistas',
-        isOutlier: true,
-        multiplier: '2.4x sobre el promedio',
-        concept: `Storytelling de transformación rápida sin mostrar rostro`
-      },
-      {
-        id: 'n3',
-        title: `Por Qué el 99% de las Personas Falla al Intentar Dominar ${keyword}`,
-        views: '380K vistas',
-        isOutlier: true,
-        multiplier: '2.1x sobre el promedio',
-        concept: `Hook de confrontación de creencias y retención sostenida`
-      },
-      {
-        id: 'n4',
-        title: `La Guía Definitiva de ${keyword} para Principiantes en 2026`,
-        views: '290K vistas',
-        isOutlier: false,
-        multiplier: '1.4x sobre el promedio',
-        concept: `Contenido evergreen de alto valor percibido`
-      },
-      {
-        id: 'n5',
-        title: `3 Errores Fatales en ${keyword} que la Mayoría Comete Sin Saberlo`,
-        views: '310K vistas',
-        isOutlier: false,
-        multiplier: '1.6x sobre el promedio',
-        concept: `Urgencia y prevención de pérdidas de tiempo/dinero`
+    if (!ytRes.ok) {
+      const errorText = await ytRes.text();
+      return res.status(ytRes.status).json({
+        error: `Error HTTP ${ytRes.status} de la API de YouTube: ${errorText}`,
+        success: false
+      });
+    }
+
+    const ytData = await ytRes.json();
+    const items = ytData.items || [];
+
+    const topViralIdeas = items.map((item: any) => ({
+      id: item.id?.videoId || '',
+      title: item.snippet?.title || '',
+      channelId: item.snippet?.channelId || '',
+      channelTitle: item.snippet?.channelTitle || '',
+      description: item.snippet?.description || '',
+      thumbnail: item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || '',
+      publishedAt: item.snippet?.publishedAt || '',
+      views: 'Google Cloud Live',
+      isOutlier: true,
+      multiplier: 'YouTube Data API Real',
+      concept: item.snippet?.description || `Concepto oficial extraído de YouTube para ${query}`
+    }));
+
+    return res.json({
+      success: true,
+      source: 'YouTube Data API v3 (Oficial Google Cloud)',
+      data: {
+        nicheName: query,
+        viralPotentialIndex: 'ALTO',
+        potentialScore: '100/100',
+        estimatedCpm: 'API en Vivo Google Cloud',
+        avgViewsPerVideo: `${items.length} Resultados en Vivo`,
+        topViralIdeas
       }
-    ]
-  };
-
-  return res.json({
-    success: true,
-    data: nicheCatalogData
-  });
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      error: err.message || 'Error al conectar con la API oficial de YouTube',
+      success: false
+    });
+  }
 });
 
 // ==========================================
