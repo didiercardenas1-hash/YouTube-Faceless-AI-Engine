@@ -120,77 +120,56 @@ interface MetadataResult {
 }
 
 const STRATEGY_DATA: AnalysisResult = {
-  diagnostico_viral: "El video funciona porque combina curiosidad cuantitativa (5 inversiones), una promesa de exclusividad ('en secreto antes de los 30'), y un bucle de retención inmediato ('la tercera opción nadie la conoce pero genera ingresos pasivos todos los días'), lo que obliga al espectador a quedarse al menos hasta la opción #3.",
-  nuevo_concepto: "Replicar la estructura de curiosidad y prueba social reemplazando 'inversiones tradicionales' por 'activos digitales automatizados y micro-negocios de bajo capital', apelando a la urgencia de construir libertad financiera real con herramientas modernas de IA.",
-  gancho_3_segundos: "El 99% pierde sus mejores años ahorrando en el banco, pero los millonarios jóvenes usan este activo secreto que paga todos los días mientras duermen.",
-  prompt_miniatura_en: "A cinematic high-contrast close-up shot of a glowing futuristic digital vault opening, radiating gold and neon cyan light, with a mysterious young silhouette in a dark hoodie looking at holographic financial charts displaying passive cash flow graphs, high detail, sharp focus, 8k resolution, octane render, photorealistic, dramatic lighting, vibrant colors.",
-  texto_sobre_miniatura: "EL ACTIVO SECRETO DE 0$ TO $10K",
+  diagnostico_viral: "Analizando patrones de viralidad, curiosidad y estructuras de retención para tu nicho...",
+  nuevo_concepto: "Concepto de video Faceless optimizado con edición dinámica e inteligencia artificial.",
+  gancho_3_segundos: "Gancho inicial de alto impacto listo para ser generado...",
+  prompt_miniatura_en: "Cinematic high-contrast close-up shot, dark atmospheric background, glowing neon lighting, 8k render",
+  texto_sobre_miniatura: "ESTRATEGIA VIRAL IA",
   titulos_sugeridos: [
-    "Las 5 Inversiones Secretas que los Jóvenes Millonarios Ocultan (La #3 paga a diario)",
-    "Haz Esto Antes de los 30: El Activo de Ingresos Pasivos que Nadie te Enseña",
-    "5 Formas en que los Millonarios Multiplican su Dinero en Secreto (Copia la #3)"
+    "Ingresa una idea para generar títulos optimizados para CTR"
   ],
   keywords_seo: [
-    "inversiones secretas millonarios",
-    "ingresos pasivos 2026",
-    "finanzas personales jovenes",
-    "como ser millonario antes de los 30",
-    "activos digitales rentables",
-    "libertad financiera automatizada"
+    "youtube faceless",
+    "automatizacion ia",
+    "contenido viral"
   ]
 };
 
 const GUION_DATA: GuionResult = {
-  titulo_video: "Las 5 Inversiones Secretas que los Jóvenes Millonarios Ocultan (La #3 Paga Diario)",
-  duracion_estimada: "3 minutos",
+  titulo_video: "Estrategia de Guión Faceless",
+  duracion_estimada: "2:30 minutos",
   escenas: [
     {
       numero_escena: 1,
-      timestamp: "00:00 - 00:15",
-      bloque: "Gancho de Retención",
-      locucion_texto: "El 99% de las personas pierde sus años más valiosos guardando dinero en un banco tradicional. Mientras tanto, los millonarios menores de 30 años invierten en cinco activos secretos que generan riqueza automatizada. Presta atención al activo número tres, porque nadie lo menciona y paga dividendos todos los días.",
-      indicacion_broll: "Corte rápido de billetes de dólar cayendo en cámara lenta, seguido de una gráfica digital en neón rojo y verde disparándose hacia arriba sobre un fondo oscuro cinematográfico.",
-      prompt_generador_imagen_en: "Cinematic dark shot of dollar bills floating in slow motion against a dark atmospheric background, with glowing holographic stock growth charts rising rapidly, hyperrealistic, octane render, 8k resolution"
+      timestamp: "00:00 - 00:05",
+      bloque: "Hook de Retención",
+      locucion_texto: "Haz clic en 'Generar Guion' o selecciona un video viral para redactar automáticamente esta locución...",
+      indicacion_broll: "Visual de alto impacto con iluminación neón cinematográfica",
+      prompt_generador_imagen_en: "Dark cinematic animated style, mysterious atmosphere, glowing purple light, 8k render"
     },
     {
       numero_escena: 2,
-      timestamp: "00:15 - 00:45",
-      bloque: "Problema / Inversión 1 (Atención Colectiva)",
-      locucion_texto: "Inversión número uno: Monetización de atención en nichos sin rostro. Mientras la mayoría pierde cuatro horas al día consumiendo videos cortos, la élite joven crea redes de canales automatizados sin mostrar su cara, adueñándose del activo más codiciado del siglo XXI: la atención digital.",
-      indicacion_broll: "Primer plano de un joven de espaldas frente a tres monitores gigantes mostrando paneles de YouTube Analytics en verde y flujos de tráfico en tiempo real.",
-      prompt_generador_imagen_en: "Back view of a young creator in a dark studio room facing three large curved monitors displaying glowing YouTube analytics dashboards and viral video matrices, moody lighting, futuristic aesthetic"
+      timestamp: "00:05 - 00:30",
+      bloque: "Introducción",
+      locucion_texto: "La introducción se sincronizará con la historia real extraída...",
+      indicacion_broll: "B-roll explicativo con interfaz digital en movimiento",
+      prompt_generador_imagen_en: "Futuristic digital interface, glowing cyan holographic data streams, high quality cinematic lighting"
     },
     {
       numero_escena: 3,
-      timestamp: "00:45 - 01:15",
-      bloque: "Inversión 2 (Protocolos DeFi de Rendimiento Real)",
-      locucion_texto: "Inversión número dos: Protocolos de liquidez con rendimiento real. Olvídate de la especulación salvaje. Los verdaderos profesionales depositan capital en contratos inteligentes que cobran comisiones automáticas por cada transacción que ocurre en la red global, creando un flujo de caja ininterrumpido.",
-      indicacion_broll: "Animación 3D de un nodo blockchain dorado conectando cadenas de datos cibernéticos con partículas de luz fluyendo entre cofres digitales.",
-      prompt_generador_imagen_en: "3D render of a glowing gold blockchain core node transmitting streams of digital data coins across a high-tech network grid, deep blue and gold aesthetic, photorealistic, cinematic"
+      timestamp: "00:30 - 02:00",
+      bloque: "Desarrollo",
+      locucion_texto: "El cuerpo principal del guion se redactará con IA...",
+      indicacion_broll: "Secuencias cinematográficas B-roll dinámicas 4K",
+      prompt_generador_imagen_en: "Epic dramatic cinematic scene, cinematic lighting, 8k resolution, octane render"
     },
     {
       numero_escena: 4,
-      timestamp: "01:15 - 01:50",
-      bloque: "Inversión 3 (El Clímax - Licencias y Micro-SaaS de IA)",
-      locucion_texto: "Llegamos a la número tres, el secreto mejor guardado: Micro-SaaS y licencias de algoritmos de inteligencia artificial. No necesitas programar desde cero; los millonarios compran o empaquetan herramientas simples de IA que resuelven un problema específico y cobran suscripciones mensuales recurrentes.",
-      indicacion_broll: "Primer plano futurista de un chip de procesador con la inscripción 'AI SYSTEM' que emite destellos cian mientras se cargan estadísticas de pagos recurrentes mensuales.",
-      prompt_generador_imagen_en: "Macro shot of a glowing microchip labeled AI SYSTEM, surrounded by holographic monthly subscription payment notifications floating in mid-air, dark cyberpunk style"
-    },
-    {
-      numero_escena: 5,
-      timestamp: "01:50 - 02:25",
-      bloque: "Inversiones 4 y 5 (Marcas Privadas + Habilidades de Alto Valor)",
-      locucion_texto: "Inversión cuatro: Marcas privadas en nichos de alto margen. Y la número cinco: Tu propia habilidad de arquitectura de sistemas. Invierte en dominar la creación de embudos automatizados. Un solo sistema bien diseñado vale más que diez años de trabajo asalariado.",
-      indicacion_broll: "Secuencia rápida de maquetas de productos de lujo minimalistas seguidas por una mano operando un teclado mecánico brillante con líneas de código doradas.",
-      prompt_generador_imagen_en: "Sleek luxury black and gold private label product mockups on a marble pedestal, transitioning to close up of hands typing glowing gold code lines on a mechanical keyboard"
-    },
-    {
-      numero_escena: 6,
-      timestamp: "02:25 - 03:00",
-      bloque: "Llamado a la Acción (CTA de Alta Conversión)",
-      locucion_texto: "Si quieres el desglose paso a paso de cómo construir la inversión número tres sin capital inicial, suscríbete ahora mismo y deja la palabra 'SISTEMA' en los comentarios. Te enviaremos la guía gratuita antes de que eliminemos este video.",
-      indicacion_broll: "Botón de suscripción animado con una campana dorada vibrando, mientras aparece un gráfico flotante invitando a comentar en pantalla.",
-      prompt_generador_imagen_en: "A 3D glossy YouTube Subscribe button with a glowing golden notification bell ringing, dramatic studio lighting, dark background, ultra high quality"
+      timestamp: "02:00 - 02:30",
+      bloque: "Cierre / CTA",
+      locucion_texto: "El llamado a la acción se adaptará al tema seleccionado...",
+      indicacion_broll: "Animación de botón de suscripción neón",
+      prompt_generador_imagen_en: "High contrast YouTube Subscribe button animation with glowing neon lighting, studio background, 8k render"
     }
   ]
 };
@@ -3220,18 +3199,22 @@ export default function App() {
                   <div className="absolute bottom-6 inset-x-4 text-center px-2 pointer-events-none">
                     <div className="inline-block bg-black/75 backdrop-blur-md border border-cyan-500/30 px-4 py-2 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.9)]">
                       <p className="text-sm sm:text-base font-extrabold uppercase font-sans tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
-                        {['EL', '99%', 'DE', 'LAS', 'PERSONAS', 'TRABAJA'].map((word, idx) => (
-                          <span
-                            key={idx}
-                            className={`mx-1 transition-all ${
-                              idx === activeSubWordIndex
-                                ? 'text-[#00F0FF] scale-110 font-black text-shadow-[0_0_12px_#00F0FF]'
-                                : 'text-white'
-                            }`}
-                          >
-                            {word}
-                          </span>
-                        ))}
+                        {(() => {
+                          const currentText = guionResult.escenas?.[0]?.locucion_texto || guionResult.guion?.hook || strategyResult.gancho_3_segundos || "Guion Generado con IA";
+                          const words = currentText.replace(/[^\w\sÁÉÍÓÚáéíóúÑñ]/g, '').toUpperCase().split(/\s+/).filter(Boolean).slice(0, 10);
+                          return words.map((word, idx) => (
+                            <span
+                              key={idx}
+                              className={`mx-1 transition-all ${
+                                idx === activeSubWordIndex % Math.max(1, words.length)
+                                  ? 'text-[#00F0FF] scale-110 font-black text-shadow-[0_0_12px_#00F0FF]'
+                                  : 'text-white'
+                              }`}
+                            >
+                              {word}
+                            </span>
+                          ));
+                        })()}
                       </p>
                     </div>
                   </div>

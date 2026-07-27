@@ -388,64 +388,74 @@ app.post('/api/webhooks/payment', (req: Request, res: Response) => {
 // 3. API ROUTE 1: GUIONES Y ESTRATEGIA (Gemini 2.0 Flash)
 // ==========================================
 
+function cleanTopicTitle(rawText: string): string {
+  let cleaned = (rawText || '').trim();
+  cleaned = cleaned.replace(/^Estrategia Clonada de Video Viral:\s*"/i, '');
+  cleaned = cleaned.replace(/^Análisis de Video Viral:\s*"/i, '');
+  cleaned = cleaned.replace(/\s*\.\s*Concepto Clave:.*$/i, '');
+  cleaned = cleaned.replace(/\s*Detalles:.*$/i, '');
+  cleaned = cleaned.replace(/"$/g, '').trim();
+  return cleaned || 'Historia Viral Relevante';
+}
+
 // Helper for dynamic script fallback
 const buildDynamicScript = (topicPrompt: string, nicheText?: string) => {
-  const topic = topicPrompt.trim() || 'Estrategias Virales 2026';
+  const topic = cleanTopicTitle(topicPrompt);
   const targetNiche = nicheText || 'General';
 
   return {
-    tituloSEO: `Revelaciones Inéditas sobre ${topic}`,
-    descripcionSEO: `Guía estratégica y análisis completo sobre ${topic}. Descubre los conceptos clave para potenciar tu contenido en 2026.\n\n⏱️ MARCAS DE TIEMPO:\n00:00 - Gancho Inicial\n00:15 - Contexto e Historia\n00:45 - Análisis y Puntos Clave\n02:15 - Cierre y Conclusión\n\n#${topic.replace(/[^a-zA-Z0-9]/g, '')} #YouTubeFaceless #Viral2026`,
-    etiquetas: [topic, targetNiche, "faceless AI", "estrategia viral", "contenido automatizado"],
+    tituloSEO: `La Verdad Oculta Detrás de ${topic}`,
+    descripcionSEO: `Descubre los detalles fascinantes y la narrativa detrás de ${topic}. Análisis exhaustivo de los momentos clave.\n\n⏱️ MARCAS DE TIEMPO:\n00:00 - Revelación Inicial\n00:15 - El Inconveniente Principal\n00:45 - Desarrollo de la Historia\n02:15 - Conclusión y Reflexión\n\n#${topic.replace(/[^a-zA-Z0-9]/g, '')} #YouTubeFaceless #HistoriaViral`,
+    etiquetas: [topic, targetNiche, "documental faceless", "historia real", "casos virales"],
     guion: {
-      hook: `Existe un misterio fascinante detrás de ${topic} que muy pocos han logrado descifrar hasta hoy.`,
-      introduccion: `Para comprender verdaderamente el impacto de este concepto, debemos explorar los elementos centrales que motivan el interés de la audiencia.`,
-      cuerpo: `La clave radica en tres pilares fundamentales: primero, la claridad del mensaje visual; segundo, el ritmo narrativo constante; y tercero, la entrega directa de valor sin rodeos innecesarios.`,
-      llamadoALaAccion: `Si te apasiona descubrir este tipo de secretos, asegúrate de suscribirte al canal y activar las notificaciones para no perderte nuestras próximas investigaciones.`
+      hook: `Detrás del fenómeno de ${topic} se oculta un suceso impactante que muy pocos conocen en detalle.`,
+      introduccion: `Todo comenzó cuando los acontecimientos alrededor de este caso tomaron un giro inesperado, capturando la atención de millones.`,
+      cuerpo: `Al profundizar en los hechos clave, surgen verdades reveladoras: las decisiones trascendentales tomadas en el momento más crítico, la reacción de la audiencia y las consecuencias inevitables que cambiaron la historia.`,
+      llamadoALaAccion: `Si te apasiona descubrir este tipo de historias, suscríbete al canal y activa la campana para explorar más relatos fascinantes.`
     },
     promptsVisuales: [
-      "Cinematic close-up of futuristic holographic display glowing with vibrant purple ambient light, dark studio setting, 8k render, hyperrealistic",
-      "Sleek digital interface showing dynamic data visualization grid, cyan and violet neon tones, Octane render 16:9",
-      "Dramatic aerial shot of modern high-tech laboratory with soft volumetric lighting, cinematic mood, 8k resolution",
-      "Glossy YouTube Subscribe button animation glowing with gold notification bell, dark background, 3D render"
+      "Cinematic dramatic portrait with soft moody side lighting, deep shadows, 8k render, photorealistic",
+      "Atmospheric dark cinematic scene showing historical documents and vintage photographs on a wooden table, 8k",
+      "Wide angle dramatic shot of a mysterious silhouette in a dimly lit hallway, cinematic color grading",
+      "Minimalist glowing YouTube Subscribe animation overlay on dark ambient background, 8k resolution"
     ],
     configVoz: {
-      tono: "Dramático / Educativo",
+      tono: "Dramático / Narrativo",
       velocidad: "1.0x"
     },
-    titulo_principal: `Revelaciones Inéditas sobre ${topic}`,
+    titulo_principal: `La Verdad Oculta Detrás de ${topic}`,
     titulos_alternativos_AB: [
-      `La Verdad Oculta de ${topic}`,
-      `Guía Definitiva sobre ${topic}`
+      `La Verdadera Historia Detrás de ${topic}`,
+      `Lo Que Nadie Te Contó Sobre ${topic}`
     ],
     guion_escenas: [
       {
         timestamp: "00:00 - 00:15",
-        locucion_texto: `Existe un misterio fascinante detrás de ${topic} que muy pocos han logrado descifrar hasta hoy.`,
-        indicacion_broll: "Visual neón de alta calidad con iluminación cinematográfica",
-        prompt_imagen_ingles: "Cinematic close-up of futuristic holographic display glowing with vibrant purple ambient light, dark studio setting, 8k render, hyperrealistic"
+        locucion_texto: `Detrás del fenómeno de ${topic} se oculta un suceso impactante que muy pocos conocen en detalle.`,
+        indicacion_broll: "Secuencia cinematográfica de alto impacto con iluminación dramática",
+        prompt_imagen_ingles: "Cinematic dramatic portrait with soft moody side lighting, deep shadows, 8k render, photorealistic"
       },
       {
         timestamp: "00:15 - 00:45",
-        locucion_texto: "Para comprender verdaderamente el impacto de este concepto, debemos explorar los elementos centrales...",
-        indicacion_broll: "B-roll explicativo con interfaz digital dinámica",
-        prompt_imagen_ingles: "Sleek digital interface showing dynamic data visualization grid, cyan and violet neon tones, Octane render 16:9"
+        locucion_texto: "Todo comenzó cuando los acontecimientos alrededor de este caso tomaron un giro inesperado...",
+        indicacion_broll: "B-roll atmosférico con archivos y documentos clave",
+        prompt_imagen_ingles: "Atmospheric dark cinematic scene showing historical documents and vintage photographs on a wooden table, 8k"
       },
       {
         timestamp: "00:45 - 01:15",
-        locucion_texto: "La clave radica en tres pilares fundamentales: claridad, ritmo y valor constante...",
-        indicacion_broll: "Toma cinematográfica aérea en alta resolución",
-        prompt_imagen_ingles: "Dramatic aerial shot of modern high-tech laboratory with soft volumetric lighting, cinematic mood, 8k resolution"
+        locucion_texto: "Al profundizar en los hechos clave, surgen verdades reveladoras sobre las decisiones más críticas...",
+        indicacion_broll: "Toma panorámica dramática en alta resolución",
+        prompt_imagen_ingles: "Wide angle dramatic shot of a mysterious silhouette in a dimly lit hallway, cinematic color grading"
       }
     ],
     seo: {
-      descripcion_optimizada: `Guía estratégica y análisis completo sobre ${topic}.\n\n⏱️ MARCAS DE TIEMPO:\n00:00 - Gancho\n00:15 - Contexto\n00:45 - Análisis`,
-      tags_lista: [topic, targetNiche, "faceless AI"],
+      descripcion_optimizada: `Descubre los detalles fascinantes sobre ${topic}.\n\n⏱️ MARCAS DE TIEMPO:\n00:00 - Revelación\n00:15 - Contexto\n00:45 - Hechos Clave`,
+      tags_lista: [topic, targetNiche, "documental faceless"],
       hashtags: [`#${topic.replace(/[^a-zA-Z0-9]/g, '')}`, "#YouTubeFaceless"]
     },
     branding_sugerido: {
-      nombre_canal: `${topic.split(' ')[0]} HQ`,
-      concepto: `Análisis e investigaciones estratégicas sobre ${topic}`,
+      nombre_canal: `${topic.split(' ')[0]} Historias`,
+      concepto: `Relatos e historias de alto impacto sobre ${topic}`,
       paleta_hex: ["#00F0FF", "#8A2BE2", "#00FF88", "#07090E"]
     }
   };
@@ -507,11 +517,11 @@ app.post('/api/ai/generate-script', async (req: Request, res: Response) => {
     realTranscript = await fetchYouTubeTranscript(targetVideo);
   }
 
-  const topicPrompt = idea || (targetVideo ? `Analiza este video: ${targetVideo}` : 'Concepto de video viral');
+  const cleanTopic = cleanTopicTitle(idea || targetVideo || 'Historia Viral');
 
   try {
     if (!ai) {
-      const fallbackData = buildDynamicScript(topicPrompt, niche);
+      const fallbackData = buildDynamicScript(cleanTopic, niche);
       console.log("Respuesta Gemini (Fallback sin API Key):", fallbackData);
       return res.json({
         success: true,
@@ -524,7 +534,17 @@ app.post('/api/ai/generate-script', async (req: Request, res: Response) => {
 
     let systemPrompt = '';
     if (realTranscript && realTranscript.trim().length > 0) {
-      systemPrompt = `Aquí tienes la transcripción real de un video viral: "${realTranscript.substring(0, 8000)}". Analiza la historia/concepto central y redacta un guion totalmente nuevo, fluido y original para YouTube Faceless estructurado en JSON (Hook, Introducción, Cuerpo, CTA y prompts de imagen en inglés). No copies las frases textualmente, adáptalo para alto impacto.
+      systemPrompt = `Aquí tienes la transcripción real de un video viral sobre "${cleanTopic}":
+"${realTranscript.substring(0, 8000)}"
+
+INSTRUCCIONES CRÍTICAS:
+Analiza la historia y concepto central de esta transcripción y redacta un guion 100% ORIGINAL, fluido y fascinante para un canal de YouTube Faceless.
+El guion debe ser ESTRUCTURADO Y ESPECÍFICO sobre la historia real de ${cleanTopic}.
+
+PROHIBICIONES ABSOLUTAS:
+1. PROHIBIDO usar frases de plantilla o texto de relleno como "En este video analizaremos...", "Para comprender verdaderamente...", "La clave radica en tres pilares...", "El 99% de las personas...", o "adaptada al nicho de...".
+2. PROHIBIDO copiar oraciones textualmente de la transcripción. Transforma la historia en una narrativa épica de alta retención (Hook de 5s, Introducción, Cuerpo dinámico y CTA).
+3. PROMPTS DE IMAGEN EN INGLÉS (promptsVisuales): Genera de 3 a 5 descripciones de imagen cinematográficas concisas en inglés (ejemplo: 'Cinematic dramatic portrait of mysterious figure in stage light, 8k render'). NUNCA pegues títulos en español ni descripciones largas dentro del prompt.
 
 Devuelve la respuesta en formato JSON estrictamente válido con la siguiente estructura exacta:
 {
@@ -532,15 +552,15 @@ Devuelve la respuesta en formato JSON estrictamente válido con la siguiente est
   "descripcionSEO": "Descripción completa con marcas de tiempo (timestamps) y hashtags relevantes",
   "etiquetas": ["etiqueta1", "etiqueta2", "etiqueta3", "etiqueta4", "etiqueta5"],
   "guion": {
-    "hook": "Texto del gancho inicial de 5-10 segundos...",
-    "introduccion": "Texto introductorio fluido sin clichés...",
-    "cuerpo": "Desarrollo completo y envolvente del tema...",
+    "hook": "Gancho magnético de 5-10 segundos 100% específico de la historia...",
+    "introduccion": "Desarrollo del conflicto o misterio inicial...",
+    "cuerpo": "Relato fascinante de los hechos principales sin rodeos...",
     "llamadoALaAccion": "Texto de cierre y CTA..."
   },
   "promptsVisuales": [
-    "Cinematic close-up of neon glowing cryptocurrency chart, dark ambient atmosphere, 8k render",
-    "Futuristic holographic interface with cyan data streams, octane render, 16:9",
-    "Dramatic cinematic lighting shot of high tech lab, photorealistic, 8k"
+    "Cinematic dramatic portrait of mysterious figure in stage light, 8k render",
+    "Atmospheric dark vintage photographs on wooden desk, 8k",
+    "Wide angle dramatic shot of crowded theater hall, photorealistic"
   ],
   "configVoz": {
     "tono": "Dramático / Misterioso / Educativo",
@@ -549,18 +569,18 @@ Devuelve la respuesta en formato JSON estrictamente válido con la siguiente est
 }`;
     } else {
       systemPrompt = `Eres un guionista y estratega de contenido élite para canales Faceless de YouTube.
-Tu tarea es actuar como un guionista profesional y redactar un guión 100% ORIGINAL, natural, fluido y libre sobre la idea/concepto: "${topicPrompt}" en el nicho: "${niche || 'General'}".
+Tu tarea es actuar como un guionista profesional y redactar un guión 100% ORIGINAL, natural, fluido y libre sobre la historia/concepto: "${cleanTopic}" en el nicho: "${niche || 'General'}".
 
 INSTRUCCIONES CRÍTICAS DE REDACCIÓN (PROHIBIDO USAR PLANTILLAS):
-1. NO USES FRASES FÓRMULA NI MOLDES HARDCODEADOS: Prohibido usar "En este video analizaremos todo lo relacionado con...", "Al examinar el contenido sobre...", "El 99% de las personas...", o "adaptada al nicho de...".
+1. NO USES FRASES FÓRMULA NI MOLDES HARDCODEADOS: Prohibido usar "En este video analizaremos todo lo relacionado con...", "Para comprender verdaderamente...", "La clave radica en tres pilares...", "El 99% de las personas...", o "adaptada al nicho de...". Redacta escenas 1 a 4 completamente dinámicas e individuales sobre ${cleanTopic}.
 2. REDACCIÓN PROFESIONAL DIRECTA:
-   - hook: Redacta un gancho orgánico, fascinante e impactante de 5 a 10 segundos.
+   - hook: Redacta un gancho orgánico, fascinante e impactante de 5 a 10 segundos sobre ${cleanTopic}.
    - introduccion: Desarrolla el misterio o problema planteado de forma fluida y natural.
    - cuerpo: Explica exhaustivamente los puntos clave del tema con narrativa envolvente de alta retención.
    - llamadoALaAccion: Redacta una llamada a la acción limpia e impulsiva para suscribirse y comentar.
-3. PROMPTS VISUALES CONCISOS EN INGLÉS (promptsVisuales): Genera de 3 a 5 prompts de imagen EN INGLÉS puramente descriptivos y concisos de estilo cinematográfico (ejemplo: 'Cinematic close-up of neon glowing cryptocurrency chart, dark ambient atmosphere, 8k render'). NUNCA pegues títulos en español ni oraciones largas dentro de los prompts.
+3. PROMPTS VISUALES CONCISOS EN INGLÉS (promptsVisuales): Genera de 3 a 5 prompts de imagen EN INGLÉS puramente descriptivos y concisos de estilo cinematográfico (ejemplo: 'Cinematic close-up of mysterious character in dramatic stage light, 8k render'). NUNCA pegues títulos en español ni oraciones largas dentro de los prompts.
 
-Devuelve la respuesta en formato JSON strictly válido con el siguiente esquema:
+Devuelve la respuesta en formato JSON estrictamente válido con el siguiente esquema:
 {
   "tituloSEO": "Título viral optimizado para CTR",
   "descripcionSEO": "Descripción completa con marcas de tiempo (timestamps) y hashtags",
@@ -572,8 +592,8 @@ Devuelve la respuesta en formato JSON strictly válido con el siguiente esquema:
     "llamadoALaAccion": "Texto de cierre y CTA..."
   },
   "promptsVisuales": [
-    "Cinematic close-up of neon glowing cryptocurrency chart, dark ambient atmosphere, 8k render",
-    "Futuristic holographic interface with cyan data streams, octane render, 16:9",
+    "Cinematic close-up of mysterious character in dramatic stage light, 8k render",
+    "Futuristic digital interface with cyan data streams, octane render, 16:9",
     "Dramatic cinematic lighting shot of high tech lab, photorealistic, 8k"
   ],
   "configVoz": {
@@ -604,7 +624,7 @@ Devuelve la respuesta en formato JSON strictly válido con el siguiente esquema:
       data: parsedData
     });
   } catch (error: any) {
-    const fallbackData = buildDynamicScript(topicPrompt, niche);
+    const fallbackData = buildDynamicScript(cleanTopic, niche);
     console.warn('Gemini API rate limit o error detectado. Retornando JSON dinámico estructurado.', error?.message);
     console.log("Respuesta Gemini (Fallback Backend):", fallbackData);
     return res.json({
