@@ -292,18 +292,17 @@ const INITIAL_SAVED_CHANNELS: SavedChannel[] = [
 ];
 
 export default function App() {
-  const [transcript, setTranscript] = useState(
-    "En este video te revelo las 5 inversiones que los millonarios hacen en secreto antes de los 30 años. La tercera opción nadie la conoce pero genera ingresos pasivos todos los días..."
-  );
+  const [transcript, setTranscript] = useState('');
   const [strategyResult, setStrategyResult] = useState<AnalysisResult>(STRATEGY_DATA);
   const [guionResult, setGuionResult] = useState<GuionResult>(GUION_DATA);
   const [brandingResult, setBrandingResult] = useState<BrandingResult>(BRANDING_DATA);
   const [metadataResult, setMetadataResult] = useState<MetadataResult>(METADATA_DATA);
-  const [savedChannels, setSavedChannels] = useState<SavedChannel[]>(INITIAL_SAVED_CHANNELS);
+  const [savedChannels, setSavedChannels] = useState<SavedChannel[]>([]);
+  const [top50ViralVideos, setTop50ViralVideos] = useState<any[]>([]);
+  const [isLoadingTop50, setIsLoadingTop50] = useState<boolean>(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUrl, setNewUrl] = useState('');
   const [newName, setNewName] = useState('');
-  const [newNiche, setNewNiche] = useState('Inversiones');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [apiErrorMsg, setApiErrorMsg] = useState<string | null>(null);
 
@@ -841,6 +840,40 @@ export default function App() {
     }
   };
 
+  const handleFetchTop50Virales = async () => {
+    const targetNiche = transcript.trim() || onboardingNiche || 'terror';
+    setIsLoadingTop50(true);
+    setToastMessage(`🔥 Consultando Top 50 videos más virales en vivo para "${targetNiche}" vía YouTube Data API...`);
+    try {
+      const res = await fetch('/api/youtube/niche-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nicheKeyword: targetNiche, maxResults: 50 })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.data?.topViralIdeas) {
+          setTop50ViralVideos(data.data.topViralIdeas);
+          setNicheExplorerData(prev => ({
+            ...prev,
+            nicheName: targetNiche,
+            topViralIdeas: data.data.topViralIdeas
+          }));
+          setActiveTab('niche_explorer');
+          setToastMessage(`🔥 ¡Top 50 Videos Virales en Vivo cargados exitosamente para "${targetNiche}"!`);
+        }
+      } else {
+        const errJson = await res.json();
+        setToastMessage(`⚠️ Error al cargar Top 50: ${errJson.error || 'Falla en API YouTube'}`);
+      }
+    } catch (err: any) {
+      setToastMessage(`⚠️ Error de conexión: ${err.message || 'Falla de red'}`);
+    } finally {
+      setIsLoadingTop50(false);
+      setTimeout(() => setToastMessage(null), 4000);
+    }
+  };
+
   const handleCloneViralStrategy = (videoTitle: string, videoConcept: string) => {
     setTranscript(`Estrategia Clonada de Video Viral: "${videoTitle}". Concepto Clave: ${videoConcept}. Generar guión Faceless optimizado en español para alto CTR y retención.`);
     setActiveTab('script');
@@ -1138,7 +1171,7 @@ export default function App() {
     const newChannelItem: SavedChannel = {
       id: `ch-${Date.now()}`,
       nombre: createdName,
-      nicho: newNiche || 'General',
+      nicho: onboardingNiche || 'General',
       handle: extractedHandle,
       url: newUrl.startsWith('http') ? newUrl : `https://${newUrl}`,
       subscriptores: '100K+',
@@ -2202,69 +2235,79 @@ export default function App() {
         ) : (
           <>
             {/* Input Banner / Control Console */}
-            <section id="input-section" className="mb-8">
-          <div className="glass-card glass-card-hover rounded-2xl p-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="flex items-center justify-between mb-3">
-              <label htmlFor="transcript-input" className="text-xs font-mono font-bold uppercase text-cyan-300 flex items-center gap-2 tracking-wider">
-                <Terminal className="w-4 h-4 text-cyan-400" />
-                CONSOLA DE COMANDO // CONCEPTO DEL VIDEO O NICHO
-              </label>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span className="text-[11px] text-emerald-400 font-mono font-semibold">ESTADO: ONLINE</span>
-              </div>
-            </div>
-
-            <div className="relative">
-              <textarea
-                id="transcript-input"
-                value={transcript}
-                onChange={(e) => setTranscript(e.target.value)}
-                rows={2}
-                className="w-full bg-[#05070B]/90 border border-[#1E2638] rounded-xl p-3.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all resize-none font-mono selection:bg-cyan-500/30"
-              />
-            </div>
-
-            <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
-                <Flame className="w-4 h-4 text-amber-400 animate-pulse" />
-                <span>Nicho Objetivo: <strong className="text-cyan-300">{onboardingNiche || strategyResult.nicho || 'Finanzas & Tecnología'}</strong></span>
-              </div>
-              <button
-                onClick={handleAnalyzeConcept}
-                disabled={isAnalyzing}
-                className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-black font-extrabold text-xs rounded-xl shadow-[0_0_20px_rgba(0,240,255,0.4)] flex items-center gap-2 transition-all duration-300 hover:scale-[1.02] active:scale-95 disabled:opacity-50"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    Procesando IA...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3.5 h-3.5 fill-black" />
-                    ACTUALIZAR IDENTIDAD & ESTRATEGIA
-                  </>
-                )}
-              </button>
-            </div>
-
-            {apiErrorMsg && (
-              <div className="mt-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/40 text-rose-300 text-xs font-mono flex items-start gap-3 shadow-[0_0_20px_rgba(244,63,94,0.2)]">
-                <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <strong className="text-white block font-bold">⚠️ FALLO DE CONEXIÓN O ERROR EN API DE IA</strong>
-                  <p>{apiErrorMsg}</p>
-                  <span className="text-[11px] text-slate-400 block pt-1">
-                    Nota: Asegúrate de tener configurada la variable <code className="text-cyan-300 font-bold bg-slate-900 px-1.5 py-0.5 rounded">GEMINI_API_KEY</code> o <code className="text-cyan-300 font-bold bg-slate-900 px-1.5 py-0.5 rounded">NEXT_PUBLIC_GEMINI_API_KEY</code> en tu archivo <code className="text-cyan-300 font-bold bg-slate-900 px-1.5 py-0.5 rounded">.env</code>.
-                  </span>
+            <section id="input-section" className="mb-6">
+              <div className="glass-card rounded-2xl p-4.5 relative overflow-hidden border border-cyan-500/30 shadow-[0_0_25px_rgba(0,240,255,0.15)]">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 mb-2 font-mono">
+                  <label htmlFor="transcript-input" className="text-xs font-bold uppercase text-cyan-300 flex items-center gap-2 tracking-wider">
+                    <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+                    CONSOLA DE COMANDO // INGRESA TU NICHO O CONCEPTO
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="text-[10px] text-emerald-400 font-semibold">API ONLINE</span>
+                  </div>
                 </div>
+
+                <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-2.5">
+                  <input
+                    id="transcript-input"
+                    type="text"
+                    value={transcript}
+                    onChange={(e) => setTranscript(e.target.value)}
+                    placeholder="Escribe un nicho o concepto (Ej: terror, musica cristiana, inteligencia artificial, finanzas)..."
+                    className="flex-1 bg-[#05070B] border border-[#1E2638] focus:border-cyan-400 text-xs text-white p-3 rounded-xl font-mono focus:outline-none placeholder:text-slate-500"
+                  />
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
+                    <button
+                      onClick={handleAnalyzeConcept}
+                      disabled={isAnalyzing}
+                      className="px-4 py-3 bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-black font-extrabold text-xs rounded-xl shadow-[0_0_15px_rgba(0,240,255,0.3)] flex items-center justify-center gap-2 transition-all disabled:opacity-50 font-mono"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3.5 h-3.5 fill-black" />
+                          ACTUALIZAR IDENTIDAD & ESTRATEGIA
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={handleFetchTop50Virales}
+                      disabled={isLoadingTop50}
+                      className="px-4 py-3 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-black font-extrabold text-xs rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.3)] flex items-center justify-center gap-2 transition-all disabled:opacity-50 font-mono"
+                      title="Consultar los 50 videos con mayores reproducciones en tiempo real vía YouTube Data API"
+                    >
+                      {isLoadingTop50 ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          Cargando 50 Virales...
+                        </>
+                      ) : (
+                        <>
+                          <Flame className="w-3.5 h-3.5 fill-black" />
+                          🔥 Búsqueda automática: Top 50 Videos Más Virales en Vivo
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {apiErrorMsg && (
+                  <div className="mt-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/40 text-rose-300 text-xs font-mono flex items-start gap-2.5">
+                    <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="text-white block font-bold">⚠️ ERROR DE IA/CONEXIÓN</strong>
+                      <p>{apiErrorMsg}</p>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </section>
+            </section>
 
         {/* Notification Toast */}
         {toastMessage && (
@@ -2402,47 +2445,78 @@ export default function App() {
               </div>
             </div>
 
-            {/* TOP 5 IDEAS & OUTLIERS VIRALES DETECTADOS */}
+            {/* TOP IDEAS & OUTLIERS VIRALES DETECTADOS */}
             <div className="glass-card rounded-3xl p-6 border border-emerald-500/40 shadow-[0_0_35px_rgba(0,255,136,0.15)] space-y-4 font-mono">
-              <div className="flex items-center justify-between border-b border-[#1E2638] pb-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-[#1E2638] pb-4 gap-3">
                 <div className="flex items-center gap-2">
                   <Flame className="w-5 h-5 text-emerald-400 animate-pulse" />
                   <h3 className="text-sm font-extrabold text-white">
-                    TOP 5 TEMAS & VIDEOS VIRALES OUTLIERS EN "{nicheExplorerData.nicheName.toUpperCase()}"
+                    TOP {nicheExplorerData.topViralIdeas.length} VIDEOS MÁS VIRALES POR VISTAS (YOUTUBE DATA API V3)
                   </h3>
                 </div>
-                <span className="px-2.5 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-full">
-                  OUTLIER ALGORITHM v3.6
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleFetchTop50Virales}
+                    disabled={isLoadingTop50}
+                    className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-black font-extrabold text-[10px] rounded-lg shadow-md flex items-center gap-1.5 transition-all disabled:opacity-50"
+                  >
+                    {isLoadingTop50 ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Flame className="w-3 h-3 fill-black" />}
+                    <span>🔥 Cargar Top 50 En Vivo</span>
+                  </button>
+                  <span className="px-2.5 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-full">
+                    GOOGLE CLOUD LIVE
+                  </span>
+                </div>
               </div>
 
               <div className="space-y-3">
                 {nicheExplorerData.topViralIdeas.map((idea, idx) => (
                   <div
-                    key={idea.id}
+                    key={idea.id || idx}
                     className={`p-4 rounded-2xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
                       idea.isOutlier
                         ? 'bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-transparent border-emerald-400/80 shadow-[0_0_20px_rgba(0,255,136,0.2)]'
                         : 'bg-[#05070B] border-[#1E2638]'
                     }`}
                   >
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-bold text-slate-400">#{idx + 1}</span>
-                        <h4 className="text-xs font-bold text-white">{idea.title}</h4>
-                        {idea.isOutlier && (
-                          <span className="px-2 py-0.5 text-[9px] font-bold uppercase bg-emerald-400 text-black rounded-full shadow-[0_0_10px_#00FF88] flex items-center gap-1">
-                            🚀 OUTLIER VIRAL ({idea.multiplier})
-                          </span>
-                        )}
+                    <div className="flex items-start md:items-center gap-3.5 flex-1">
+                      {idea.thumbnail ? (
+                        <img
+                          src={idea.thumbnail}
+                          alt={idea.title}
+                          className="w-24 h-14 object-cover rounded-xl border border-slate-700/80 shrink-0 shadow-md"
+                        />
+                      ) : (
+                        <div className="w-24 h-14 bg-slate-800 rounded-xl flex items-center justify-center shrink-0 border border-slate-700 text-[10px] text-slate-400">
+                          Sin Imagen
+                        </div>
+                      )}
+
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-slate-400">#{idx + 1}</span>
+                          <h4 className="text-xs font-bold text-white line-clamp-1">{idea.title}</h4>
+                          {idea.isOutlier && (
+                            <span className="px-2 py-0.5 text-[9px] font-bold uppercase bg-emerald-400 text-black rounded-full shadow-[0_0_10px_#00FF88] flex items-center gap-1">
+                              🚀 TOP VIRAL ({idea.multiplier || 'Alta Relevancia'})
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono">
+                          {idea.channelTitle && <span className="text-cyan-300 font-bold">📺 {idea.channelTitle}</span>}
+                          {idea.publishedAt && <span>📅 {idea.publishedAt}</span>}
+                        </div>
+                        <p className="text-[11px] text-slate-400 font-sans line-clamp-1">
+                          💡 <strong className="text-slate-300">Detalles:</strong> {idea.concept}
+                        </p>
                       </div>
-                      <p className="text-[11px] text-slate-400 font-sans">
-                        💡 <strong className="text-slate-300">Estrategia:</strong> {idea.concept}
-                      </p>
                     </div>
 
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-xs font-bold text-cyan-300">{idea.views}</span>
+                    <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-[#1E2638]">
+                      <span className="text-xs font-bold text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 font-mono">
+                        {idea.views || '🔥 Top Virales'}
+                      </span>
                       <button
                         type="button"
                         onClick={() => handleCloneViralStrategy(idea.title, idea.concept)}
@@ -2533,22 +2607,7 @@ export default function App() {
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-mono text-slate-300 mb-1.5 font-semibold">
-                        NICHO / CATEGORÍA
-                      </label>
-                      <select
-                        value={newNiche}
-                        onChange={(e) => setNewNiche(e.target.value)}
-                        className="w-full bg-[#05070B] border border-[#1E2638] focus:border-cyan-400 text-xs text-white p-3 rounded-xl font-mono focus:outline-none"
-                      >
-                        <option value="Inversiones & Activos">Inversiones & Activos Digitales</option>
-                        <option value="Desarrollo Personal">Desarrollo Personal & Filosofía</option>
-                        <option value="Automatización IA">Automatización & IA Faceless</option>
-                        <option value="Cripto & DeFi">Criptomonedas & DeFi</option>
-                        <option value="Negocios Online">Negocios Online & Ecommerce</option>
-                      </select>
-                    </div>
+
 
                     <div className="flex justify-end gap-2 pt-2">
                       <button
