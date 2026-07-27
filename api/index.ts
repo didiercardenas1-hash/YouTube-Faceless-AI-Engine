@@ -82,6 +82,24 @@ function buildDynamicScript(promptText: string, nicheText?: string) {
   const targetNiche = nicheText || 'Finanzas & Tecnología';
 
   return {
+    tituloSEO: `Los Secretos Virales de ${topic}: Guía Definitiva y Estrategia 2026`,
+    descripcionSEO: `En este video revelamos la guía definitiva sobre ${topic} en el nicho de ${targetNiche}. Descubre secretos clave, análisis en profundidad y la mejor estrategia para 2026.\n\n⏱️ MARCAS DE TIEMPO:\n00:00 - Hook / Revelación Inmediata\n00:15 - Introducción al Misterio\n00:45 - Desarrollo y Puntos Clave\n02:15 - Conclusión y Llamado a la Acción\n\n👉 Suscríbete para más contenido exclusivo sobre ${targetNiche}.\n\n#${topic.replace(/\s+/g, '')} #${targetNiche.replace(/\s+/g, '')} #YouTubeFaceless #Viral`,
+    etiquetas: [topic, `${topic} 2026`, targetNiche, "viral youtube", "canales faceless", "automatizacion ia"],
+    guion: {
+      hook: `El 99% de las personas comete un error fatal cuando intenta entender ${topic}. Pero si prestas atención a los próximos 60 segundos, descubrirás la verdad oculta que transforma este nicho por completo.`,
+      introduccion: `Bienvenido a esta entrega especial sobre ${topic} adaptada al nicho de ${targetNiche}. Durante años los principales canales han mantenido en reserva esta estrategia, pero hoy desglosaremos paso a paso el método exacto.`,
+      cuerpo: `Punto 1: Dominio del bucle de retención inicial apelando a curiosidad cuantitativa.\nPunto 2: Aplicación de recursos visuales B-roll en alta definición sin mostrar rostro.\nPunto 3: Automatización de la producción usando herramientas de IA de última generación.`,
+      llamadoALaAccion: `Si te ha servido este análisis sobre ${topic}, dale me gusta, activa la campanita de notificaciones y suscríbete ahora mismo a nuestro canal para no perderte el próximo documental exclusivo.`
+    },
+    promptsVisuales: [
+      `Cinematic HD 16:9 visualization for ${topic}, glowing cyan and purple neon ambient lighting, 8k render, octane render`,
+      `High quality cinematic close-up of ${topic} elements, futuristic ambient glow, hyperrealistic 8k --ar 16:9`,
+      `Panoramic futuristic view representing success in ${topic}, epic dramatic lighting, 8k resolution`
+    ],
+    configVoz: {
+      tono: "Dramático / Misterioso / Educativo",
+      velocidad: "1.0x"
+    },
     titulo_principal: `Los Secretos Virales de ${topic}: Guía Definitiva y Estrategia 2026`,
     titulos_alternativos_AB: [
       `Cómo Dominar ${topic} en 2026: Estrategias que Nadie te Enseña`,
@@ -90,19 +108,19 @@ function buildDynamicScript(promptText: string, nicheText?: string) {
     guion_escenas: [
       {
         timestamp: "00:00 - 00:15",
-        locucion_texto: `Bienvenido a esta entrega especial sobre ${topic} para el nicho de ${targetNiche}. En los próximos minutos te revelaremos la estructura completa y los secretos clave que están transformando este nicho por completo...`,
+        locucion_texto: `El 99% de las personas comete un error fatal cuando intenta entender ${topic}. Pero si prestas atención a los próximos 60 segundos, descubrirás la verdad oculta que transforma este nicho por completo.`,
         indicacion_broll: `Secuencia cinematográfica de alta calidad con iluminación neón cyberpunk en 4K representando ${topic}.`,
         prompt_imagen_ingles: `Cinematic HD visualization for ${topic}, glowing cyan and purple neon ambient lighting, 8k render --ar 16:9`
       },
       {
         timestamp: "00:15 - 00:45",
-        locucion_texto: `El primer aspecto fundamental que debes comprender sobre ${topic} es la combinación de la pasión con la técnica. Cuando aplicas este método, la respuesta de la audiencia es inmediata...`,
+        locucion_texto: `Bienvenido a esta entrega especial sobre ${topic} para el nicho de ${targetNiche}. Durante años los principales canales han mantenido en reserva esta estrategia, pero hoy desglosaremos paso a paso el método exacto.`,
         indicacion_broll: `Primer plano cinematográfico con efectos de partículas luminosas y gráficos digitales dinámicos sobre ${topic}.`,
         prompt_imagen_ingles: `High quality cinematic close-up of ${topic} elements, futuristic ambient glow, hyperrealistic 8k --ar 16:9`
       },
       {
         timestamp: "00:45 - 01:15",
-        locucion_texto: `Finalmente, la clave para consolidar tu canal en el nicho de ${targetNiche} reside en la autenticidad del mensaje y la frecuencia. Si sigues estos 3 pasos, tu impacto será masivo.`,
+        locucion_texto: `Punto 1: Dominio del bucle de retención inicial... Si sigues estos 3 pasos, tu impacto será masivo.`,
         indicacion_broll: `Tomas panorámicas ascendentes con estética cyberpunk y paleta de colores cyan y violeta neón.`,
         prompt_imagen_ingles: `Panoramic futuristic view representing success in ${topic}, epic lighting, 8k resolution --ar 16:9`
       }
@@ -241,27 +259,24 @@ app.post('/api/ai/generate-script', async (req: Request, res: Response) => {
     const systemPrompt = `Eres un guionista y estratega de contenido élite para YouTube Faceless AI Engine v3.6.
 Genera un guión estructurado optimizado para el nicho: "${niche || 'Finanzas y Tecnología'}" basado en la idea/tema: "${topicPrompt}".
 
-Devuelve la respuesta en formato JSON estrictamente válido con la siguiente estructura:
+Devuelve la respuesta en formato JSON estrictamente válido con la siguiente estructura exacta:
 {
-  "titulo_principal": "string",
-  "titulos_alternativos_AB": ["string", "string"],
-  "guion_escenas": [
-    {
-      "timestamp": "string",
-      "locucion_texto": "string",
-      "indicacion_broll": "string",
-      "prompt_imagen_ingles": "string en inglés para generación de imágenes 16:9"
-    }
-  ],
-  "seo": {
-    "descripcion_optimizada": "string con timestamps y llamados a la acción",
-    "tags_lista": ["string"],
-    "hashtags": ["string"]
+  "tituloSEO": "Título viral optimizado para CTR",
+  "descripcionSEO": "Descripción completa con marcas de tiempo y hashtags",
+  "etiquetas": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+  "guion": {
+    "hook": "Texto impactante para los primeros 5 segundos...",
+    "introduccion": "Desarrollo del problema o misterio...",
+    "cuerpo": "Contenido principal dividido en puntos clave...",
+    "llamadoALaAccion": "Cierre y llamado a suscribirse..."
   },
-  "branding_sugerido": {
-    "nombre_canal": "string",
-    "concepto": "string",
-    "paleta_hex": ["#00F0FF", "#8A2BE2", "#00FF88"]
+  "promptsVisuales": [
+    "High quality cinematic 16:9 image prompt in English for B-roll 1",
+    "High quality cinematic 16:9 image prompt in English for B-roll 2"
+  ],
+  "configVoz": {
+    "tono": "Dramático / Misterioso / Educativo",
+    "velocidad": "1.0x"
   }
 }`;
 

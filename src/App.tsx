@@ -982,14 +982,62 @@ export default function App() {
           setUserCredits(prev => Math.max(0, prev - 10));
         }
 
-        const mainTitle = aiData.titulo_principal || `Estrategia y Guión sobre "${transcript}"`;
+        const mainTitle = aiData.tituloSEO || aiData.titulo_principal || `Estrategia y Guión sobre "${transcript}"`;
         const altTitles = aiData.titulos_alternativos_AB || aiData.titulos_alternativos_ab || [
           `Cómo Dominar ${transcript} en 2026: Estrategias que Nadie te Enseña`,
           `El Impacto Oculto de ${transcript}: Lo que los Expertos No Quieren que Sepas`
         ];
 
-        // 1. Update Guion State (titulo_video + scenes)
-        if (aiData.guion_escenas && Array.isArray(aiData.guion_escenas)) {
+        // 1. Update Guion State (supporting both guion object & guion_escenas array)
+        if (aiData.guion) {
+          const g = aiData.guion;
+          const scenesFromObject = [
+            {
+              numero_escena: 1,
+              timestamp: "00:00 - 00:05 (Hook)",
+              bloque: "Hook Impactante",
+              locucion_texto: g.hook || "",
+              indicacion_broll: "Visual de alto impacto neón en primeros 5 segundos",
+              prompt_generador_imagen_en: aiData.promptsVisuales?.[0] || `Cinematic HD 16:9 visualization for ${transcript}, 8k render`,
+              prompt_imagen_ingles: aiData.promptsVisuales?.[0] || ""
+            },
+            {
+              numero_escena: 2,
+              timestamp: "00:05 - 00:30 (Introducción)",
+              bloque: "Introducción al Misterio",
+              locucion_texto: g.introduccion || "",
+              indicacion_broll: "B-roll explicativo en movimiento lento y gráficos dinámicos",
+              prompt_generador_imagen_en: aiData.promptsVisuales?.[1] || `High quality cinematic close-up of ${transcript}, 8k --ar 16:9`,
+              prompt_imagen_ingles: aiData.promptsVisuales?.[1] || ""
+            },
+            {
+              numero_escena: 3,
+              timestamp: "00:30 - 02:00 (Cuerpo)",
+              bloque: "Desarrollo de Puntos Clave",
+              locucion_texto: g.cuerpo || "",
+              indicacion_broll: "Secuencias cinematográficas B-roll dinámicas 4K",
+              prompt_generador_imagen_en: aiData.promptsVisuales?.[2] || `Panoramic futuristic view representing ${transcript}, 8k resolution`,
+              prompt_imagen_ingles: aiData.promptsVisuales?.[2] || ""
+            },
+            {
+              numero_escena: 4,
+              timestamp: "02:00 - 02:30 (Cierre)",
+              bloque: "Llamado a la Acción (CTA)",
+              locucion_texto: g.llamadoALaAccion || "",
+              indicacion_broll: "Animación de suscripción y botones sociales neón",
+              prompt_generador_imagen_en: `Subscribe animation with neon glow for ${transcript}, 8k render`,
+              prompt_imagen_ingles: `Subscribe animation with neon glow for ${transcript}, 8k render`
+            }
+          ];
+
+          setGuionResult(prev => ({
+            ...prev,
+            titulo_video: mainTitle,
+            titulo: mainTitle,
+            duracion_estimada: "2:30 minutos",
+            escenas: scenesFromObject
+          }));
+        } else if (aiData.guion_escenas && Array.isArray(aiData.guion_escenas)) {
           setGuionResult(prev => ({
             ...prev,
             titulo_video: mainTitle,
@@ -1008,16 +1056,14 @@ export default function App() {
         }
 
         // 2. Update Metadata State
-        if (aiData.seo) {
-          setMetadataResult(prev => ({
-            ...prev,
-            titulo_principal: mainTitle,
-            titulos_alternativos_ab: altTitles,
-            descripcion_optimizada: aiData.seo.descripcion_optimizada || prev.descripcion_optimizada,
-            tags_lista: aiData.seo.tags_lista || prev.tags_lista,
-            hashtags: aiData.seo.hashtags || prev.hashtags
-          }));
-        }
+        setMetadataResult(prev => ({
+          ...prev,
+          titulo_principal: mainTitle,
+          titulos_alternativos_ab: altTitles,
+          descripcion_optimizada: aiData.descripcionSEO || aiData.seo?.descripcion_optimizada || prev.descripcion_optimizada,
+          tags_lista: aiData.etiquetas || aiData.seo?.tags_lista || prev.tags_lista,
+          hashtags: aiData.seo?.hashtags || aiData.etiquetas?.map((t: string) => `#${t.replace(/\s+/g, '')}`) || prev.hashtags
+        }));
 
         // 3. Update Branding State
         if (aiData.branding_sugerido) {
@@ -1045,11 +1091,11 @@ export default function App() {
           nicho: transcript,
           diagnostico_viral: `El tema "${transcript}" destaca por apelar a la curiosidad inmediata y la búsqueda activa de contenido especializado en YouTube.`,
           nuevo_concepto: aiData.branding_sugerido?.concepto || `Replicar la estructura de curiosidad aplicando edición Faceless dinámica para el nicho ${transcript}.`,
-          gancho_3_segundos: aiData.guion_escenas?.[0]?.locucion_texto || `El 99% de las personas no conoce la verdad oculta sobre ${transcript}...`,
-          prompt_miniatura_en: `Cinematic high contrast shot about ${transcript}, glowing neon cyan and gold lighting, 8k render, hyperrealistic`,
+          gancho_3_segundos: aiData.guion?.hook || aiData.guion_escenas?.[0]?.locucion_texto || `El 99% de las personas comete un error fatal sobre ${transcript}...`,
+          prompt_miniatura_en: aiData.promptsVisuales?.[0] || `Cinematic high contrast shot about ${transcript}, glowing neon cyan lighting, 8k render`,
           texto_sobre_miniatura: `LA VERDAD SOBRE ${transcript.toUpperCase().substring(0, 18)}`,
           titulos_sugeridos: altTitles,
-          keywords_seo: aiData.seo?.tags_lista || [`nicho ${transcript}`, `${transcript} virales`, `guion ${transcript}`]
+          keywords_seo: aiData.etiquetas || aiData.seo?.tags_lista || prev.keywords_seo
         }));
 
         // 5. Connect YouTube Data API: Fetch Niche Search & Outliers
