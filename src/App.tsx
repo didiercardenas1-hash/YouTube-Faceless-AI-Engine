@@ -991,42 +991,43 @@ export default function App() {
         // 1. Update Guion State (supporting both guion object & guion_escenas array)
         if (aiData.guion) {
           const g = aiData.guion;
+          const pv = aiData.promptsVisuales || [];
           const scenesFromObject = [
             {
               numero_escena: 1,
               timestamp: "00:00 - 00:05 (Hook)",
               bloque: "Hook Impactante",
               locucion_texto: g.hook || "",
-              indicacion_broll: "Visual de alto impacto neón en primeros 5 segundos",
-              prompt_generador_imagen_en: aiData.promptsVisuales?.[0] || `Cinematic HD 16:9 visualization for ${transcript}, 8k render`,
-              prompt_imagen_ingles: aiData.promptsVisuales?.[0] || ""
+              indicacion_broll: "Visual cinematográfico neón de alto impacto",
+              prompt_generador_imagen_en: pv[0] || "Dark cinematic animated style, mysterious atmosphere, glowing purple light, 8k render",
+              prompt_imagen_ingles: pv[0] || "Dark cinematic animated style, mysterious atmosphere, glowing purple light, 8k render"
             },
             {
               numero_escena: 2,
               timestamp: "00:05 - 00:30 (Introducción)",
-              bloque: "Introducción al Misterio",
+              bloque: "Introducción",
               locucion_texto: g.introduccion || "",
-              indicacion_broll: "B-roll explicativo en movimiento lento y gráficos dinámicos",
-              prompt_generador_imagen_en: aiData.promptsVisuales?.[1] || `High quality cinematic close-up of ${transcript}, 8k --ar 16:9`,
-              prompt_imagen_ingles: aiData.promptsVisuales?.[1] || ""
+              indicacion_broll: "B-roll explicativo en movimiento continuo y gráficos digitales",
+              prompt_generador_imagen_en: pv[1] || "Futuristic digital interface, glowing cyan holographic data streams, high quality cinematic lighting",
+              prompt_imagen_ingles: pv[1] || "Futuristic digital interface, glowing cyan holographic data streams, high quality cinematic lighting"
             },
             {
               numero_escena: 3,
               timestamp: "00:30 - 02:00 (Cuerpo)",
-              bloque: "Desarrollo de Puntos Clave",
+              bloque: "Desarrollo del Tema",
               locucion_texto: g.cuerpo || "",
               indicacion_broll: "Secuencias cinematográficas B-roll dinámicas 4K",
-              prompt_generador_imagen_en: aiData.promptsVisuales?.[2] || `Panoramic futuristic view representing ${transcript}, 8k resolution`,
-              prompt_imagen_ingles: aiData.promptsVisuales?.[2] || ""
+              prompt_generador_imagen_en: pv[2] || "Epic dramatic cinematic scene, cinematic lighting, 8k resolution, octane render",
+              prompt_imagen_ingles: pv[2] || "Epic dramatic cinematic scene, cinematic lighting, 8k resolution, octane render"
             },
             {
               numero_escena: 4,
               timestamp: "02:00 - 02:30 (Cierre)",
               bloque: "Llamado a la Acción (CTA)",
               locucion_texto: g.llamadoALaAccion || "",
-              indicacion_broll: "Animación de suscripción y botones sociales neón",
-              prompt_generador_imagen_en: `Subscribe animation with neon glow for ${transcript}, 8k render`,
-              prompt_imagen_ingles: `Subscribe animation with neon glow for ${transcript}, 8k render`
+              indicacion_broll: "Animación de botón de suscripción y gráficos neón",
+              prompt_generador_imagen_en: pv[3] || "High contrast YouTube Subscribe button animation with glowing neon lighting, studio background, 8k render",
+              prompt_imagen_ingles: pv[3] || "High contrast YouTube Subscribe button animation with glowing neon lighting, studio background, 8k render"
             }
           ];
 
