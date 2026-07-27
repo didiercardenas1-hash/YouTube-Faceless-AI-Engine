@@ -444,19 +444,21 @@ app.post('/api/ai/generate-script', async (req: Request, res: Response) => {
 
   try {
     if (!ai) {
+      const fallbackData = buildDynamicScript(topicPrompt, niche);
+      console.log("Respuesta Gemini (Fallback sin API Key):", fallbackData);
       return res.json({
         success: true,
         source: 'fallback-structured',
         credits_deducted: 10,
         remaining_credits: deduction.remainingCredits,
-        data: buildDynamicScript(topicPrompt, niche)
+        data: fallbackData
       });
     }
 
     const systemPrompt = `Eres un guionista y estratega de contenido élite para YouTube Faceless AI Engine v3.6.
 Genera un guión estructurado optimizado para el nicho: "${niche || 'Finanzas y Tecnología'}" basado en la idea/tema: "${topicPrompt}".
 
-Devuelve la respuesta en formato JSON strictly válido con la siguiente estructura:
+Devuelve la respuesta en formato JSON estrictamente válido con la siguiente estructura:
 {
   "titulo_principal": "string",
   "titulos_alternativos_AB": ["string", "string"],
@@ -482,11 +484,16 @@ Devuelve la respuesta en formato JSON strictly válido con la siguiente estructu
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.0-flash',
-      contents: systemPrompt
+      contents: systemPrompt,
+      config: {
+        responseMimeType: 'application/json'
+      }
     });
 
     const cleanJson = (response.text || '').replace(/```json/g, '').replace(/```/g, '').trim();
     const parsedData = JSON.parse(cleanJson);
+
+    console.log("Respuesta Gemini (Live API Backend):", parsedData);
 
     return res.json({
       success: true,
@@ -496,13 +503,15 @@ Devuelve la respuesta en formato JSON strictly válido con la siguiente estructu
       data: parsedData
     });
   } catch (error: any) {
-    console.warn('Gemini API rate limit or error encountered. Returning structured dynamic JSON.', error?.message);
+    const fallbackData = buildDynamicScript(topicPrompt, niche);
+    console.warn('Gemini API rate limit o error detectado. Retornando JSON dinámico estructurado.', error?.message);
+    console.log("Respuesta Gemini (Fallback Backend):", fallbackData);
     return res.json({
       success: true,
       source: 'fallback-structured',
       credits_deducted: 10,
       remaining_credits: deduction.remainingCredits,
-      data: buildDynamicScript(topicPrompt, niche)
+      data: fallbackData
     });
   }
 });

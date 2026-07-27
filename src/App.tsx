@@ -936,6 +936,8 @@ export default function App() {
         return;
       }
 
+      console.log("Respuesta Gemini:", resData);
+
       setApiErrorMsg(null);
 
       if (resData.data) {
@@ -947,17 +949,26 @@ export default function App() {
           setUserCredits(prev => Math.max(0, prev - 10));
         }
 
-        // 1. Update Guion State
+        const mainTitle = aiData.titulo_principal || `Estrategia y Guión sobre "${transcript}"`;
+        const altTitles = aiData.titulos_alternativos_AB || aiData.titulos_alternativos_ab || [
+          `Cómo Dominar ${transcript} en 2026: Estrategias que Nadie te Enseña`,
+          `El Impacto Oculto de ${transcript}: Lo que los Expertos No Quieren que Sepas`
+        ];
+
+        // 1. Update Guion State (titulo_video + scenes)
         if (aiData.guion_escenas && Array.isArray(aiData.guion_escenas)) {
           setGuionResult(prev => ({
             ...prev,
-            titulo: aiData.titulo_principal || prev.titulo,
-            titulos_AB: aiData.titulos_alternativos_AB || prev.titulos_AB,
+            titulo_video: mainTitle,
+            titulo: mainTitle,
+            duracion_estimada: `${aiData.guion_escenas.length * 35} segundos`,
             escenas: aiData.guion_escenas.map((sc: any, idx: number) => ({
               numero_escena: idx + 1,
               timestamp: sc.timestamp || `00:${idx * 15} - 00:${(idx + 1) * 15}`,
+              bloque: `Escena ${idx + 1}: ${sc.indicacion_broll ? sc.indicacion_broll.substring(0, 30) : 'Desarrollo'}...`,
               locucion_texto: sc.locucion_texto || "",
               indicacion_broll: sc.indicacion_broll || "",
+              prompt_generador_imagen_en: sc.prompt_imagen_ingles || sc.prompt_generador_imagen_en || `Cinematic HD 16:9 visualization for ${transcript}, glowing neon 8k render`,
               prompt_imagen_ingles: sc.prompt_imagen_ingles || ""
             }))
           }));
@@ -967,6 +978,8 @@ export default function App() {
         if (aiData.seo) {
           setMetadataResult(prev => ({
             ...prev,
+            titulo_principal: mainTitle,
+            titulos_alternativos_ab: altTitles,
             descripcion_optimizada: aiData.seo.descripcion_optimizada || prev.descripcion_optimizada,
             tags_lista: aiData.seo.tags_lista || prev.tags_lista,
             hashtags: aiData.seo.hashtags || prev.hashtags
@@ -975,19 +988,32 @@ export default function App() {
 
         // 3. Update Branding State
         if (aiData.branding_sugerido) {
+          const brand = aiData.branding_sugerido;
           setBrandingResult(prev => ({
             ...prev,
-            nombre_canal: aiData.branding_sugerido.nombre_canal || prev.nombre_canal,
-            concepto: aiData.branding_sugerido.concepto || prev.concepto,
-            paleta_hex: aiData.branding_sugerido.paleta_hex || prev.paleta_hex
+            nombre_canal: brand.nombre_canal || prev.nombre_canal,
+            concepto: brand.concepto || prev.concepto,
+            nombres_canal_sugeridos: [
+              brand.nombre_canal || `${transcript.split(' ')[0]} HQ`,
+              `${transcript.split(' ')[0]} Élite`,
+              `Imperio ${transcript.split(' ')[0]}`
+            ],
+            descripcion_canal_seo: brand.concepto ? `Bienvenido al canal oficial de ${brand.nombre_canal || transcript}. ${brand.concepto} Suscríbete para recibir contenido exclusivo.` : prev.descripcion_canal_seo,
+            paleta_colores_hex: brand.paleta_hex || prev.paleta_colores_hex || ["#00F0FF", "#8A2BE2", "#00FF88", "#07090E"],
+            prompt_logo_en: `Minimalist vector logo for ${transcript}, sharp neon geometry, 8k render`,
+            prompt_banner_en: `Sleek panoramic 16:9 YouTube channel banner for ${transcript}, dark glowing neon theme`
           }));
         }
 
         // 4. Update Strategy Result State
         setStrategyResult(prev => ({
           ...prev,
-          titulo: aiData.titulo_principal || prev.titulo,
-          nicho: onboardingNiche || prev.nicho
+          titulo: mainTitle,
+          nicho: onboardingNiche || transcript,
+          gancho_3_segundos: aiData.guion_escenas?.[0]?.locucion_texto || prev.gancho_3_segundos,
+          novo_concepto: aiData.branding_sugerido?.concepto || prev.nuevo_concepto,
+          titulos_sugeridos: altTitles,
+          keywords_seo: aiData.seo?.tags_lista || prev.keywords_seo
         }));
 
         setToastMessage(`⚡ Guión e Identidad IA actualizados para "${transcript.substring(0, 25)}..." (-10 Créditos)`);
