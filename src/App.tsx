@@ -57,7 +57,8 @@ import {
   ToggleLeft,
   ToggleRight,
   Server,
-  Compass
+  Compass,
+  AlertTriangle
 } from 'lucide-react';
 
 interface SavedChannel {
@@ -746,6 +747,7 @@ export default function App() {
   const [selectedNicheCategory, setSelectedNicheCategory] = useState<string>('Finanzas & Cripto');
   const [customNicheInput, setCustomNicheInput] = useState<string>('');
   const [isSearchingNiche, setIsSearchingNiche] = useState<boolean>(false);
+  const [youtubeSearchError, setYoutubeSearchError] = useState<string | null>(null);
   const [nicheExplorerData, setNicheExplorerData] = useState({
     nicheName: 'Finanzas & Cripto',
     viralPotentialIndex: 'ALTO',
@@ -797,22 +799,30 @@ export default function App() {
   });
 
   const handleSearchNiche = async (keyword: string) => {
-    if (!keyword.trim()) return;
+    const cleanKey = sanitizeInputText(keyword);
+    if (!cleanKey.trim()) return;
     setIsSearchingNiche(true);
+    setYoutubeSearchError(null);
     try {
       const res = await fetch('/api/youtube/niche-search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nicheKeyword: keyword })
+        body: JSON.stringify({ nicheKeyword: cleanKey, query: cleanKey, niche: cleanKey })
       });
       const data = await res.json();
-      if (data.data) {
+      if (res.ok && data.success && data.data) {
         setNicheExplorerData(data.data);
-        setSelectedNicheCategory(keyword);
-        setToastMessage(`🔍 Nicho "${keyword}" analizado vía YouTube Data API: Potencial ${data.data.viralPotentialIndex} (${data.data.potentialScore}).`);
+        setSelectedNicheCategory(cleanKey);
+        setToastMessage(`🔍 Nicho "${cleanKey}" analizado vía YouTube Data API: ${data.data.topViralIdeas?.length || 0} Videos Virales encontrados.`);
+      } else {
+        const errMsg = data?.error || `Error HTTP ${res.status} al consultar la API de YouTube.`;
+        setYoutubeSearchError(errMsg);
+        setToastMessage(`⚠️ ${errMsg}`);
       }
-    } catch {
-      setToastMessage(`🔍 Nicho "${keyword}" cargado exitosamente.`);
+    } catch (err: any) {
+      const msg = err?.message || 'Error de conexión al consultar YouTube API.';
+      setYoutubeSearchError(msg);
+      setToastMessage(`⚠️ ${msg}`);
     } finally {
       setIsSearchingNiche(false);
       setTimeout(() => setToastMessage(null), 3500);
@@ -820,31 +830,33 @@ export default function App() {
   };
 
   const handleFetchTop50Virales = async () => {
-    const targetNiche = transcript.trim() || onboardingNiche || 'terror';
+    const targetNiche = sanitizeInputText(transcript.trim() || onboardingNiche || 'terror');
     setIsLoadingTop50(true);
+    setYoutubeSearchError(null);
     setToastMessage(`🔥 Consultando Top 50 videos más virales en vivo para "${targetNiche}" vía YouTube Data API...`);
     try {
       const res = await fetch('/api/youtube/niche-search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nicheKeyword: targetNiche, maxResults: 50 })
+        body: JSON.stringify({ nicheKeyword: targetNiche, query: targetNiche, maxResults: 50 })
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.data?.topViralIdeas) {
-          setTop50ViralVideos(data.data.topViralIdeas);
-          setNicheExplorerData(prev => ({
-            ...prev,
-            nicheName: targetNiche,
-            topViralIdeas: data.data.topViralIdeas
-          }));
-        }
+      const data = await res.json();
+      if (res.ok && data.success && data.data?.topViralIdeas) {
+        setTop50ViralVideos(data.data.topViralIdeas);
+        setNicheExplorerData(prev => ({
+          ...prev,
+          nicheName: targetNiche,
+          topViralIdeas: data.data.topViralIdeas
+        }));
       } else {
-        const errJson = await res.json();
-        setToastMessage(`⚠️ Error al cargar Top 50: ${errJson.error || 'Falla en API YouTube'}`);
+        const errMsg = data?.error || 'Error al cargar Top 50 de la API de YouTube';
+        setYoutubeSearchError(errMsg);
+        setToastMessage(`⚠️ ${errMsg}`);
       }
     } catch (err: any) {
-      setToastMessage(`⚠️ Error de conexión: ${err.message || 'Falla de red'}`);
+      const msg = err?.message || 'Falla de red al consultar YouTube API.';
+      setYoutubeSearchError(msg);
+      setToastMessage(`⚠️ ${msg}`);
     } finally {
       setIsLoadingTop50(false);
       setTimeout(() => setToastMessage(null), 4000);
@@ -1101,20 +1113,23 @@ export default function App() {
 
         // 5. Connect YouTube Data API: Fetch Niche Search & Outliers
         try {
+          setYoutubeSearchError(null);
           const ytSearchRes = await fetch('/api/youtube/niche-search', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nicheKeyword: transcript })
+            body: JSON.stringify({ nicheKeyword: targetTopic, query: targetTopic, niche: targetTopic })
           });
-          if (ytSearchRes.ok) {
-            const ytSearchData = await ytSearchRes.json();
-            if (ytSearchData.data) {
-              setNicheExplorerData(ytSearchData.data);
-              setSelectedNicheCategory(transcript);
-            }
+          const ytSearchData = await ytSearchRes.json();
+          if (ytSearchRes.ok && ytSearchData.success && ytSearchData.data) {
+            setNicheExplorerData(ytSearchData.data);
+            setSelectedNicheCategory(targetTopic);
+          } else {
+            const errMsg = ytSearchData?.error || 'No se pudo recuperar los videos virales de la API de YouTube.';
+            setYoutubeSearchError(errMsg);
           }
-        } catch (ytErr) {
+        } catch (ytErr: any) {
           console.warn('Error al actualizar Explorer de Nicho con YouTube API:', ytErr);
+          setYoutubeSearchError(ytErr.message || 'Error de conexión con la API de YouTube.');
         }
 
         // 6. Connect YouTube Data API: Track Channel & Update Saved Channels
@@ -1122,7 +1137,7 @@ export default function App() {
           const ytTrackRes = await fetch('/api/youtube/track-channel', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ handle: transcript, userEmail: activationEmail })
+            body: JSON.stringify({ handle: targetTopic, userEmail: activationEmail })
           });
           if (ytTrackRes.ok) {
             const ytTrackData = await ytTrackRes.json();
@@ -1130,10 +1145,10 @@ export default function App() {
               const ch = ytTrackData.data;
               const newChannelCard: SavedChannel = {
                 id: `ch-yt-${Date.now()}`,
-                nombre: ch.nombre || `${transcript.toUpperCase()} HQ`,
-                nicho: transcript,
-                handle: ch.handle || `@${transcript.toLowerCase().replace(/\s+/g, '')}`,
-                url: ch.url || `https://youtube.com/@${transcript.toLowerCase().replace(/\s+/g, '')}`,
+                nombre: ch.nombre || `${targetTopic.toUpperCase()} HQ`,
+                nicho: targetTopic,
+                handle: ch.handle || `@${targetTopic.toLowerCase().replace(/\s+/g, '')}`,
+                url: ch.url || `https://youtube.com/@${targetTopic.toLowerCase().replace(/\s+/g, '')}`,
                 subscriptores: ch.subscriptores || '420K',
                 videosProcesados: ch.totalVideos || 140,
                 tieneNuevoVideo: true,
@@ -1142,10 +1157,10 @@ export default function App() {
                   titulo: ch.recentVideos?.[0]?.title || mainTitle,
                   vistas: ch.recentVideos?.[0]?.views || '520K vistas',
                   publicadoHace: ch.recentVideos?.[0]?.publishedAt || 'Hace 1 día',
-                  transcripcionPremisa: `Transcripción extraída del canal ${ch.nombre} en el nicho de ${transcript}...`
+                  transcripcionPremisa: `Transcripción extraída del canal ${ch.nombre} en el nicho de ${targetTopic}...`
                 }
               };
-              setSavedChannels(prev => [newChannelCard, ...prev.filter(c => c.nicho !== transcript)]);
+              setSavedChannels(prev => [newChannelCard, ...prev.filter(c => c.nicho !== targetTopic)]);
             }
           }
         } catch (trackErr) {
@@ -2301,6 +2316,12 @@ export default function App() {
                     type="text"
                     value={transcript}
                     onChange={(e) => setTranscript(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAnalyzeConcept();
+                      }
+                    }}
                     placeholder="Escribe un nicho o concepto (Ej: terror, musica cristiana, inteligencia artificial, finanzas)..."
                     className="flex-1 bg-[#05070B] border border-[#1E2638] focus:border-cyan-400 text-xs text-white p-3 rounded-xl font-mono focus:outline-none placeholder:text-slate-500"
                   />
@@ -2516,6 +2537,26 @@ export default function App() {
                   </span>
                 </div>
               </div>
+
+              {youtubeSearchError && (
+                <div className="p-4.5 rounded-2xl bg-rose-500/10 border border-rose-500/40 text-rose-300 font-mono text-xs flex items-center gap-3 shadow-[0_0_20px_rgba(244,63,94,0.2)] mb-4">
+                  <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 animate-bounce" />
+                  <div className="flex-1 space-y-1">
+                    <strong className="block text-rose-200 font-bold">⚠️ ALERTA API YOUTUBE DATA: Error de Conexión</strong>
+                    <span className="block text-rose-300 text-[11px]">{youtubeSearchError}</span>
+                  </div>
+                </div>
+              )}
+
+              {!youtubeSearchError && nicheExplorerData.topViralIdeas.length === 0 && (
+                <div className="p-8 rounded-2xl bg-[#05070B] border border-amber-500/30 text-amber-300 font-mono text-xs text-center space-y-3 mb-4">
+                  <Compass className="w-8 h-8 text-amber-400 mx-auto animate-pulse" />
+                  <h4 className="font-extrabold text-white text-sm">NO SE ENCONTRARON VIDEOS VIRALES</h4>
+                  <p className="text-slate-400 text-xs max-w-md mx-auto">
+                    No se encontraron videos para el nicho <strong className="text-amber-300">"{nicheExplorerData.nicheName}"</strong>. Intenta ingresar otro término en la consola de comandos (ej: <em>terror, musica cristiana, inteligencia artificial, finanzas, autos de lujo</em>).
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-3">
                 {nicheExplorerData.topViralIdeas.map((idea, idx) => (

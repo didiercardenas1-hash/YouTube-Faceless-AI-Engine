@@ -897,14 +897,14 @@ app.post('/api/youtube/track-channel', async (req: Request, res: Response) => {
 });
 
 app.post('/api/youtube/niche-search', async (req: Request, res: Response) => {
-  const { nicheKeyword, maxResults } = req.body || {};
-  const query = (nicheKeyword || 'terror').trim();
+  const { nicheKeyword, query: bodyQuery, niche, term, keyword, maxResults } = req.body || {};
+  const query = sanitizeInputText(nicheKeyword || bodyQuery || niche || term || keyword || 'terror').trim();
   const limitCount = maxResults || 10;
   const youtubeApiKey = process.env.YOUTUBE_DATA_API_KEY || process.env.NEXT_PUBLIC_YOUTUBE_DATA_API_KEY || '';
 
   if (!youtubeApiKey) {
     return res.status(500).json({
-      error: 'La variable de entorno YOUTUBE_DATA_API_KEY no está configurada en .env',
+      error: 'La variable de entorno YOUTUBE_DATA_API_KEY no está configurada en .env / servidor.',
       success: false
     });
   }
@@ -915,8 +915,13 @@ app.post('/api/youtube/niche-search', async (req: Request, res: Response) => {
 
     if (!ytRes.ok) {
       const errorText = await ytRes.text();
+      let parsedErr = errorText;
+      try {
+        const errObj = JSON.parse(errorText);
+        parsedErr = errObj.error?.message || errorText;
+      } catch {}
       return res.status(ytRes.status).json({
-        error: `Error HTTP ${ytRes.status} de la API de YouTube: ${errorText}`,
+        error: `Error HTTP ${ytRes.status} de la API de YouTube: ${parsedErr}`,
         success: false
       });
     }
@@ -924,19 +929,75 @@ app.post('/api/youtube/niche-search', async (req: Request, res: Response) => {
     const ytData = await ytRes.json();
     const items = ytData.items || [];
 
-    const topViralIdeas = items.map((item: any, idx: number) => ({
-      id: item.id?.videoId || `yt-${idx}`,
-      title: item.snippet?.title || '',
-      channelId: item.snippet?.channelId || '',
-      channelTitle: item.snippet?.channelTitle || '',
-      description: item.snippet?.description || '',
-      thumbnail: item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || '',
-      publishedAt: item.snippet?.publishedAt ? item.snippet.publishedAt.substring(0, 10) : '',
-      views: '🔥 Top Virales por Vistas',
-      isOutlier: idx < 3,
-      multiplier: `${(5.0 - idx * 0.2).toFixed(1)}x sobre el promedio`,
-      concept: item.snippet?.description || `Concepto oficial extraído de YouTube para ${query}`
-    }));
+    if (items.length === 0) {
+      return res.json({
+        success: true,
+        message: `No se encontraron videos virales en YouTube para el término: "${query}".`,
+        data: {
+          nicheName: query,
+          viralPotentialIndex: 'SIN RESULTADOS',
+          potentialScore: '0/100',
+          estimatedCpm: 'N/A',
+          avgViewsPerVideo: '0 Videos Encontrados',
+          topViralIdeas: []
+        }
+      });
+    }
+
+    const videoIds = items.map((item: any) => item.id?.videoId).filter(Boolean);
+    let videoStatsMap: Record<string, { views: string; publishedAt: string }> = {};
+
+    if (videoIds.length > 0) {
+      try {
+        const statsUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoIds.join(',')}&key=${youtubeApiKey}`;
+        const statsRes = await fetch(statsUrl);
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          (statsData.items || []).forEach((vItem: any) => {
+            const rawViews = parseInt(vItem.statistics?.viewCount || '0', 10);
+            let formattedViews = '🔥 Top Relevancia';
+            if (rawViews >= 1000000) {
+              formattedViews = `${(rawViews / 1000000).toFixed(1)}M vistas`;
+            } else if (rawViews >= 1000) {
+              formattedViews = `${Math.round(rawViews / 1000)}K vistas`;
+            } else if (rawViews > 0) {
+              formattedViews = `${rawViews} vistas`;
+            }
+
+            const rawPub = vItem.snippet?.publishedAt || '';
+            const formattedPub = rawPub ? `Publicado: ${rawPub.substring(0, 10)}` : 'Reciente';
+
+            videoStatsMap[vItem.id] = {
+              views: formattedViews,
+              publishedAt: formattedPub
+            };
+          });
+        }
+      } catch (statsErr) {
+        console.warn('Warning fetching video statistics:', statsErr);
+      }
+    }
+
+    const topViralIdeas = items.map((item: any, idx: number) => {
+      const vId = item.id?.videoId || `yt-${idx}`;
+      const stats = videoStatsMap[vId] || { views: '🔥 Top Virales por Vistas', publishedAt: item.snippet?.publishedAt ? item.snippet.publishedAt.substring(0, 10) : '' };
+      const rawTitle = item.snippet?.title || '';
+      const cleanTitle = sanitizeInputText(rawTitle);
+
+      return {
+        id: vId,
+        title: cleanTitle,
+        channelId: item.snippet?.channelId || '',
+        channelTitle: item.snippet?.channelTitle || 'Canal Viral',
+        description: item.snippet?.description || '',
+        thumbnail: item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || '',
+        publishedAt: stats.publishedAt,
+        views: stats.views,
+        isOutlier: idx < 3,
+        multiplier: `${(5.0 - idx * 0.2).toFixed(1)}x sobre el promedio`,
+        concept: item.snippet?.description || `Concepto oficial extraído de YouTube para ${query}`
+      };
+    });
 
     return res.json({
       success: true,
