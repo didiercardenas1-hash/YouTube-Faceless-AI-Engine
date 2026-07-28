@@ -279,6 +279,7 @@ export default function App() {
   const [metadataResult, setMetadataResult] = useState<MetadataResult>(METADATA_DATA);
   const [savedChannels, setSavedChannels] = useState<SavedChannel[]>([]);
   const [top50ViralVideos, setTop50ViralVideos] = useState<any[]>([]);
+  const [top50NicheName, setTop50NicheName] = useState<string>('');
   const [isLoadingTop50, setIsLoadingTop50] = useState<boolean>(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUrl, setNewUrl] = useState('');
@@ -832,13 +833,14 @@ export default function App() {
   const handleFetchTop50Virales = async () => {
     const targetNiche = sanitizeInputText(transcript.trim() || onboardingNiche || 'terror');
     setIsLoadingTop50(true);
+    setTop50NicheName(targetNiche);
     setYoutubeSearchError(null);
-    setToastMessage(`🔥 Consultando Top 50 videos más virales en vivo para "${targetNiche}" vía YouTube Data API...`);
+    setToastMessage(`🔥 Cargando las 50 tendencias de YouTube para "${targetNiche}"...`);
     try {
       const res = await fetch('/api/youtube/niche-search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nicheKeyword: targetNiche, query: targetNiche, maxResults: 50 })
+        body: JSON.stringify({ nicheKeyword: targetNiche, query: targetNiche, niche: targetNiche, maxResults: 50, order: 'viewCount' })
       });
       const data = await res.json();
       if (res.ok && data.success && data.data?.topViralIdeas) {
@@ -848,13 +850,14 @@ export default function App() {
           nicheName: targetNiche,
           topViralIdeas: data.data.topViralIdeas
         }));
+        setToastMessage(`🔥 ¡50 Videos Más Virales cargados exitosamente para "${targetNiche}"!`);
       } else {
-        const errMsg = data?.error || 'Error al cargar Top 50 de la API de YouTube';
+        const errMsg = data?.error || 'Error al cargar las 50 tendencias de la API de YouTube.';
         setYoutubeSearchError(errMsg);
         setToastMessage(`⚠️ ${errMsg}`);
       }
     } catch (err: any) {
-      const msg = err?.message || 'Falla de red al consultar YouTube API.';
+      const msg = err?.message || 'Error de conexión al consultar las 50 tendencias de YouTube.';
       setYoutubeSearchError(msg);
       setToastMessage(`⚠️ ${msg}`);
     } finally {
@@ -2376,6 +2379,143 @@ export default function App() {
                 )}
               </div>
             </section>
+
+            {/* CONTENEDOR DE RESULTADOS: TOP 50 VIDEOS MÁS VIRALES EN VIVO */}
+            {(isLoadingTop50 || top50ViralVideos.length > 0) && (
+              <section id="top-50-results-section" className="mb-8 font-mono animate-in fade-in zoom-in-95 duration-300">
+                <div className="glass-card rounded-3xl p-6 border border-amber-500/40 shadow-[0_0_35px_rgba(245,158,11,0.15)] space-y-4">
+                  
+                  {/* Encabezado */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-[#1E2638] pb-4 gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-amber-500/20 border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.3)]">
+                        <Flame className="w-5 h-5 text-amber-400 animate-pulse" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-extrabold text-white tracking-wide flex items-center gap-2 flex-wrap">
+                          🔥 TOP 50 VIDEOS MÁS VIRALES EN VIVO
+                          {top50NicheName && (
+                            <span className="text-amber-300 text-xs font-bold uppercase bg-amber-500/20 px-2.5 py-0.5 rounded-lg border border-amber-500/40">
+                              Nicho: {top50NicheName}
+                            </span>
+                          )}
+                        </h3>
+                        <p className="text-[11px] text-slate-400">Resultados en tiempo real ordenados por reproducciones (Google Cloud YouTube API)</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={handleFetchTop50Virales}
+                        disabled={isLoadingTop50}
+                        className="px-3.5 py-2 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-black font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 transition-all disabled:opacity-50 hover:scale-105 active:scale-95"
+                      >
+                        {isLoadingTop50 ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Flame className="w-3.5 h-3.5 fill-black" />}
+                        <span>Re-consultar 50 Virales</span>
+                      </button>
+                      <span className="px-2.5 py-1 text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-full shadow-[0_0_10px_#00FF88]">
+                        LIVE GOOGLE CLOUD
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Estado de Carga */}
+                  {isLoadingTop50 && (
+                    <div className="p-8 rounded-2xl bg-[#05070B] border border-amber-500/40 text-amber-300 text-xs text-center space-y-3 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+                      <RefreshCw className="w-8 h-8 text-amber-400 mx-auto animate-spin" />
+                      <h4 className="font-extrabold text-white text-sm">Cargando las 50 tendencias de YouTube...</h4>
+                      <p className="text-slate-400 text-xs">Consultando estadísticas en tiempo real y ordenando por número de vistas (order=viewCount)...</p>
+                    </div>
+                  )}
+
+                  {/* Alerta de Error */}
+                  {!isLoadingTop50 && youtubeSearchError && (
+                    <div className="p-4.5 rounded-2xl bg-rose-500/10 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-3 shadow-[0_0_20px_rgba(244,63,94,0.2)]">
+                      <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 animate-bounce" />
+                      <div className="flex-1 space-y-1">
+                        <strong className="block text-rose-200 font-bold">⚠️ ALERTA DE API YOUTUBE DATA</strong>
+                        <span className="block text-rose-300 text-[11px]">{youtubeSearchError}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sin Resultados */}
+                  {!isLoadingTop50 && !youtubeSearchError && top50ViralVideos.length === 0 && (
+                    <div className="p-8 rounded-2xl bg-[#05070B] border border-amber-500/30 text-amber-300 text-xs text-center space-y-2">
+                      <Compass className="w-8 h-8 text-amber-400 mx-auto animate-pulse" />
+                      <h4 className="font-extrabold text-white text-sm">No se encontraron videos virales en vivo</h4>
+                      <p className="text-slate-400 text-xs">Ingresa un término en la consola de comandos (ej. terror, finanzas, autos, inteligencia artificial) y presiona "Top 50".</p>
+                    </div>
+                  )}
+
+                  {/* Lista de Tarjetas de Video */}
+                  {!isLoadingTop50 && top50ViralVideos.length > 0 && (
+                    <div className="grid grid-cols-1 gap-3 max-h-[650px] overflow-y-auto pr-1 custom-scrollbar">
+                      {top50ViralVideos.map((idea: any, idx: number) => (
+                        <div
+                          key={idea.id || idx}
+                          className={`p-4 rounded-2xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                            idx < 3
+                              ? 'bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-transparent border-amber-400/80 shadow-[0_0_20px_rgba(245,158,11,0.25)]'
+                              : 'bg-[#05070B] border-[#1E2638] hover:border-amber-500/40'
+                          }`}
+                        >
+                          <div className="flex items-start md:items-center gap-3.5 flex-1">
+                            {idea.thumbnail ? (
+                              <img
+                                src={idea.thumbnail}
+                                alt={idea.title}
+                                className="w-28 h-16 object-cover rounded-xl border border-slate-700/80 shrink-0 shadow-md"
+                              />
+                            ) : (
+                              <div className="w-28 h-16 bg-slate-800 rounded-xl flex items-center justify-center shrink-0 border border-slate-700 text-[10px] text-slate-400">
+                                Sin Imagen
+                              </div>
+                            )}
+
+                            <div className="space-y-1 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-bold text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-500/30">#{idx + 1}</span>
+                                <h4 className="text-xs font-bold text-white line-clamp-1">{idea.title}</h4>
+                                {idx < 3 && (
+                                  <span className="px-2 py-0.5 text-[9px] font-bold uppercase bg-amber-400 text-black rounded-full shadow-[0_0_10px_#F59E0B] flex items-center gap-1">
+                                    🚀 TOP {idx + 1} VIRAL
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 text-[11px] text-slate-400">
+                                {idea.channelTitle && <span className="text-cyan-300 font-bold">📺 {idea.channelTitle}</span>}
+                                {idea.publishedAt && <span>📅 {idea.publishedAt}</span>}
+                              </div>
+                              {idea.concept && (
+                                <p className="text-[11px] text-slate-400 font-sans line-clamp-1">
+                                  💡 <strong className="text-slate-300">Detalles:</strong> {idea.concept}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-[#1E2638]">
+                            <span className="text-xs font-bold text-amber-300 bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/30 font-mono">
+                              {idea.views || '🔥 Top Reproducciones'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCloneViralStrategy(idea.title, idea.concept, idea.id)}
+                              className="px-3.5 py-2 bg-gradient-to-r from-emerald-500 via-cyan-500 to-purple-600 hover:from-emerald-400 hover:to-purple-500 text-black font-extrabold text-[11px] rounded-xl shadow-[0_0_15px_rgba(0,255,136,0.3)] flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
+                            >
+                              <Zap className="w-3.5 h-3.5 fill-black" />
+                              <span>⚡ Clonar Estrategia & Transcripción</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
 
         {/* Notification Toast */}
         {toastMessage && (
