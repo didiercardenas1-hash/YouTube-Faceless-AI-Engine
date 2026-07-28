@@ -851,10 +851,11 @@ export default function App() {
     }
   };
 
-  const handleCloneViralStrategy = (videoTitle: string, videoConcept?: string) => {
+  const handleCloneViralStrategy = (videoTitle: string, videoConcept?: string, videoId?: string, videoUrl?: string) => {
     const cleanTitle = sanitizeInputText(videoTitle);
     setTranscript(cleanTitle);
-    handleAnalyzeConcept(cleanTitle);
+    setToastMessage("🎙️ Extrayendo audio a texto del video viral y procesando con Gemini IA...");
+    handleAnalyzeConcept(cleanTitle, videoId, videoUrl);
   };
 
   const handleCopy = (text: string, sectionKey: string) => {
@@ -917,7 +918,7 @@ export default function App() {
     return text || 'Historia Viral Relevante';
   }
 
-  const handleAnalyzeConcept = async (overrideConcept?: string) => {
+  const handleAnalyzeConcept = async (overrideConcept?: string, videoIdParam?: string, videoUrlParam?: string) => {
     const rawTopic = (overrideConcept || transcript).trim();
     const targetTopic = sanitizeInputText(rawTopic);
     if (!targetTopic) return;
@@ -931,12 +932,17 @@ export default function App() {
 
     setIsAnalyzing(true);
     setActiveTab('script');
+    if (!toastMessage) {
+      setToastMessage("🎙️ Extrayendo audio a texto del video viral y procesando con Gemini IA...");
+    }
     try {
       const response = await fetch('/api/ai/generate-script', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           idea: targetTopic,
+          videoId: videoIdParam,
+          videoUrl: videoUrlParam,
           niche: onboardingNiche || 'General',
           userEmail: activationEmail || 'didier@facelessai.io'
         })
@@ -2560,11 +2566,11 @@ export default function App() {
                       </span>
                       <button
                         type="button"
-                        onClick={() => handleCloneViralStrategy(idea.title, idea.concept)}
+                        onClick={() => handleCloneViralStrategy(idea.title, idea.concept, idea.id)}
                         className="px-3.5 py-2 bg-gradient-to-r from-emerald-500 via-cyan-500 to-purple-600 hover:from-emerald-400 hover:to-purple-500 text-black font-extrabold text-[11px] rounded-xl shadow-[0_0_15px_rgba(0,255,136,0.3)] flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
                       >
                         <Zap className="w-3.5 h-3.5 fill-black" />
-                        <span>⚡ Generar Guion de este Video</span>
+                        <span>⚡ Clonar Estrategia & Transcripción</span>
                       </button>
                     </div>
                   </div>

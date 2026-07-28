@@ -548,31 +548,40 @@ app.post('/api/ai/generate-script', async (req: Request, res: Response) => {
 
     let systemPrompt = '';
     if (realTranscript && realTranscript.trim().length > 0) {
-      systemPrompt = `Actúa como un guionista élite para canales Faceless de YouTube.
+      systemPrompt = `Actúa como un guionista élite experto en alta retención para canales Faceless de YouTube.
 Aquí tienes la transcripción hablada real de un video viral relacionado con: "${cleanTopic}":
 "${realTranscript.substring(0, 8000)}"
 
-INSTRUCCIONES OBLIGATORIAS:
-1. REDACCIÓN 100% ORIGINAL Y ESPECÍFICA: Lee y comprende la historia/concepto central de la transcripción y redacta un guion totalmente nuevo, vibrante y fluido con tus propias palabras (Hook de 5s, Introducción, Cuerpo de desarrollo narrativo y Cierre/CTA).
-2. NINGUNA PLANTILLA NI FRASE CONCATENADA: Prohibido usar plantillas rígidas, oraciones prefijadas o pegar frases de la solicitud. Redacta narrativas orgánicas de alta retención basadas en la historia.
-3. TÍTULO VIRAL CREADO DESDE CERO (tituloSEO): Genera un título completamente nuevo e ingenioso optimizado para CTR. PROHIBIDO incluir hashtags (#), emojis o copiar literalmente frases brutas de la solicitud.
-4. PROMPTS DE IMAGEN EN INGLÉS (promptsVisuales): Genera de 3 a 5 descripciones visuales cinematográficas concisas en inglés (ejemplo: 'Cinematic dramatic portrait of mysterious figure in stage light, 8k render, photorealistic'). Prohibido incluir hashtags, emojis o descripciones en español.
+INSTRUCCIONES OBLIGATORIAS DE RE-ESCRITURA (ARQUITECTURA DE 4 FASES):
+1. ESTRUCTURA DE 4 FASES DE ALTA RETENCIÓN:
+   - hook (0:00 - 0:15): Gancho psicológico disruptivo de 5-15 segundos directo a la curiosidad del espectador.
+   - introduccion (0:15 - 0:45): Agitación del problema o misterio central.
+   - cuerpo (0:45 - 02:00): 3 a 5 puntos clave narrativos y profundos sin relleno.
+   - llamadoALaAccion (02:00 - 02:30): Cierre magnético e invitación directa a suscribirse.
+2. NINGUNA PLANTILLA NI TEXTO HARDCODEADO: Redacta narrativas orgánicas 100% originales basadas en la transcripción.
+3. KIT DE PRODUCCIÓN & TITULOS A/B (titulos_alternativos_AB): Genera 3 opciones de títulos de alto CTR.
+4. PROMPTS VISUALES IA EN INGLÉS (promptsVisuales): Genera de 3 a 5 prompts visuales cinematográficos en inglés optimizados para Midjourney/Flux/DALL-E estilo 'Cinematic 8k render, photorealistic, Octane render 16:9'.
 
-Devuelve la respuesta en formato JSON estrictamente válido con la siguiente estructura exacta:
+Devuelve la respuesta en formato JSON strictly válido con este esquema:
 {
   "tituloSEO": "Título viral 100% original creado por IA para CTR",
-  "descripcionSEO": "Descripción completa con marcas de tiempo (timestamps) y hashtags limpios",
+  "titulos_alternativos_AB": [
+    "Opción A: Título Viral Directo",
+    "Opción B: Título Basado en Pregunta Disruptiva",
+    "Opción C: Título Estilo Documental Élite"
+  ],
+  "descripcionSEO": "Descripción completa con marcas de tiempo (timestamps 00:00, 00:15, 00:45) y hashtags virales limpios",
   "etiquetas": ["etiqueta1", "etiqueta2", "etiqueta3", "etiqueta4", "etiqueta5"],
   "guion": {
-    "hook": "Gancho magnético de 5-10 segundos 100% específico de la historia...",
-    "introduccion": "Desarrollo del conflicto o premisa inicial...",
-    "cuerpo": "Relato apasionante de los acontecimientos clave...",
-    "llamadoALaAccion": "Texto de cierre y llamado a suscribirse..."
+    "hook": "Gancho psicológico de 5-15s directo a la curiosidad...",
+    "introduccion": "Agitación del problema o misterio central...",
+    "cuerpo": "Desarrollo narrativo profundo de los hechos principales...",
+    "llamadoALaAccion": "Texto de cierre y CTA directo..."
   },
   "promptsVisuales": [
-    "Cinematic dramatic portrait of mysterious figure in stage light, 8k render",
-    "Atmospheric dark vintage photographs on wooden desk, 8k",
-    "Wide angle dramatic shot of crowded hall, photorealistic"
+    "Cinematic dramatic portrait of mysterious figure in stage light, 8k render, photorealistic, Octane render 16:9",
+    "Atmospheric dark vintage photographs on wooden desk, volumetric lighting, 8k render",
+    "Wide angle dramatic shot of crowded hall, photorealistic, 8k resolution"
   ],
   "configVoz": {
     "tono": "Dramático / Narrativo",
@@ -580,37 +589,42 @@ Devuelve la respuesta en formato JSON estrictamente válido con la siguiente est
   }
 }`;
     } else {
-      systemPrompt = `Actúa como un guionista élite para canales Faceless de YouTube.
+      systemPrompt = `Actúa como un guionista élite experto en alta retención para canales Faceless de YouTube.
 Tu objetivo es investigar y redactar un guion 100% ORIGINAL, fluido y envolvente desde cero sobre el tema limpio: "${cleanTopic}" (Nicho: "${cleanNiche}").
 
-INSTRUCCIONES OBLIGATORIAS:
-1. REDACCIÓN COMPLETA DESDE CERO: Escribe un guion dinámico compuesto por:
-   - hook: Gancho magnético de 5 a 10 segundos directo al grano sobre ${cleanTopic}.
-   - introduccion: Presentación fluida del conflicto o premisa principal.
-   - cuerpo: Desarrollo narrativo detallado de la historia con alta retención.
-   - llamadoALaAccion: Cierre orgánico para invitar al espectador a suscribirse.
-2. NINGUNA PLANTILLA NI CONCATENACIÓN: No utilices oraciones prefijadas ni plantillas rígidas de relleno. Todas las frases deben ser 100% originales.
-3. TÍTULO VIRAL CREADO POR IA (tituloSEO): Genera un título atractivo y profesional desde cero. NUNCA incluyas hashtags (#), emojis ni textos sucios de búsqueda.
-4. PROMPTS DE IMAGEN EN INGLÉS (promptsVisuales): Genera de 3 a 5 descripciones visuales cinematográficas concisas en inglés (ejemplo: 'Cinematic close-up of mysterious character in dramatic light, 8k render'). NUNCA pegues títulos en español ni hashtags.
+INSTRUCCIONES OBLIGATORIAS (ARQUITECTURA DE 4 FASES):
+1. ESTRUCTURA DE 4 FASES DE ALTA RETENCIÓN:
+   - hook (0:00 - 0:15): Gancho psicológico disruptivo de 5-15 segundos.
+   - introduccion (0:15 - 0:45): Agitación del problema o conflicto principal.
+   - cuerpo (0:45 - 02:00): 3 a 5 puntos clave informativos narrados con alta energía.
+   - llamadoALaAccion (02:00 - 02:30): Cierre orgánico para retención y suscripción.
+2. NINGUNA PLANTILLA NI TEXTO HARDCODEADO: Redacta oraciones 100% dinámicas e individuales sobre ${cleanTopic}.
+3. KIT DE PRODUCCIÓN & TÍTULOS A/B (titulos_alternativos_AB): Genera 3 opciones de títulos virales de alto CTR.
+4. PROMPTS VISUALES IA EN INGLÉS (promptsVisuales): Genera 3 a 5 prompts visuales estilo 'Cinematic 8k render, photorealistic, Octane render 16:9' para Midjourney/Flux/DALL-E.
 
 Devuelve la respuesta en formato JSON estrictamente válido con el esquema especificado:
 {
   "tituloSEO": "Título viral optimizado para CTR creado por IA",
+  "titulos_alternativos_AB": [
+    "Opción A: Título Viral de Impacto",
+    "Opción B: Título Revelación Secreta",
+    "Opción C: Título Pregunta Provocadora"
+  ],
   "descripcionSEO": "Descripción completa con marcas de tiempo y hashtags limpios",
   "etiquetas": ["etiqueta1", "etiqueta2", "etiqueta3", "etiqueta4", "etiqueta5"],
   "guion": {
-    "hook": "Texto del gancho inicial de 5-10 segundos...",
-    "introduccion": "Texto introductorio fluido sin clichés...",
+    "hook": "Gancho psicológico de 5-15s...",
+    "introduccion": "Agitación del problema o premisa principal...",
     "cuerpo": "Desarrollo completo y envolvente del tema...",
     "llamadoALaAccion": "Texto de cierre y CTA..."
   },
   "promptsVisuales": [
-    "Cinematic close-up of mysterious character in dramatic light, 8k render",
+    "Cinematic close-up of mysterious character in dramatic light, 8k render, photorealistic",
     "Futuristic digital interface with cyan data streams, octane render, 16:9",
     "Dramatic cinematic lighting shot of high tech lab, photorealistic, 8k"
   ],
   "configVoz": {
-    "tono": "Dramático / Misterioso / Educativo",
+    "tono": "Dramático / Narrativo / Educativo",
     "velocidad": "1.0x"
   }
 }`;
@@ -624,7 +638,14 @@ Devuelve la respuesta en formato JSON estrictamente válido con el esquema espec
       }
     });
 
-    const cleanJson = (response.text || '').replace(/```json/g, '').replace(/```/g, '').trim();
+    const rawResponseText = response.text || '{}';
+    let cleanJson = rawResponseText.trim();
+    if (cleanJson.startsWith('```json')) {
+      cleanJson = cleanJson.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    } else if (cleanJson.startsWith('```')) {
+      cleanJson = cleanJson.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+
     const parsedData = JSON.parse(cleanJson);
 
     console.log("Respuesta Gemini (Live API Backend):", parsedData);
@@ -637,7 +658,7 @@ Devuelve la respuesta en formato JSON estrictamente válido con el esquema espec
       data: parsedData
     });
   } catch (error: any) {
-    const fallbackData = buildDynamicScript(cleanTopic, niche);
+    const fallbackData = buildDynamicScript(cleanTopic, cleanNiche);
     console.warn('Gemini API rate limit o error detectado. Retornando JSON dinámico estructurado.', error?.message);
     console.log("Respuesta Gemini (Fallback Backend):", fallbackData);
     return res.json({
@@ -653,7 +674,6 @@ Devuelve la respuesta en formato JSON estrictamente válido con el esquema espec
 // ==========================================
 // 4. API ROUTE 2: GENERACIÓN DE AUDIO Y LOCUCIÓN (TTS Engine)
 // ==========================================
-
 app.post('/api/ai/generate-audio', (req: Request, res: Response) => {
   const { text, voice, userEmail, userPlan } = req.body;
   const email = userEmail || 'didier@facelessai.io';
