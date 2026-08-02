@@ -520,8 +520,9 @@ app.post('/api/youtube/track-channel', async (req: Request, res: Response) => {
 const handleYouTubeSearch = async (req: Request, res: Response) => {
   const body = req.body || {};
   const queryParam = req.query || {};
-  const { nicheKeyword, query: bodyQuery, q, niche, term, keyword, maxResults, order } = { ...queryParam, ...body };
-  const query = sanitizeInputText(q || nicheKeyword || bodyQuery || niche || term || keyword || 'terror').trim();
+  const { nicheKeyword, query: bodyQuery, q, niche, term, keyword, maxResults, order, chart } = { ...queryParam, ...body };
+  const rawInput = q || nicheKeyword || bodyQuery || niche || term || keyword || '';
+  const cleanInput = (rawInput && rawInput !== 'Finanzas & Cripto') ? sanitizeInputText(rawInput).trim() : '';
   const limitCount = Math.min(Math.max(parseInt(String(maxResults || '50'), 10) || 50, 1), 50);
   const searchOrder = order || 'viewCount';
   const youtubeApiKey = process.env.YOUTUBE_DATA_API_KEY || process.env.NEXT_PUBLIC_YOUTUBE_DATA_API_KEY || '';
@@ -536,35 +537,120 @@ const handleYouTubeSearch = async (req: Request, res: Response) => {
   }
 
   try {
-    const ytUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&order=${searchOrder}&maxResults=${limitCount}&key=${youtubeApiKey}`;
-    const ytRes = await fetch(ytUrl);
+    let items: any[] = [];
+    let videoStatsMap: Record<string, { views: string; publishedAt: string }> = {};
+    const isGlobalTrends = !cleanInput || cleanInput.toLowerCase() === 'tendencias' || cleanInput.toLowerCase() === 'global' || chart === 'mostPopular';
 
-    if (!ytRes.ok) {
-      const errorText = await ytRes.text();
-      let parsedErr = errorText;
-      try {
-        const errObj = JSON.parse(errorText);
-        parsedErr = errObj.error?.message || errorText;
-      } catch {}
-      return res.status(500).json({
-        error: `No se pudieron obtener resultados de YouTube. Revisa la API Key (Error HTTP ${ytRes.status}: ${parsedErr})`,
-        success: false,
-        videos: [],
-        items: []
+    if (isGlobalTrends) {
+      // 1. BÚSQUEDA DE TENDENCIAS GLOBALES EN YOUTUBE (chart=mostPopular)
+      const ytUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&maxResults=${limitCount}&key=${youtubeApiKey}`;
+      const ytRes = await fetch(ytUrl);
+
+      if (!ytRes.ok) {
+        const errorText = await ytRes.text();
+        let parsedErr = errorText;
+        try {
+          const errObj = JSON.parse(errorText);
+          parsedErr = errObj.error?.message || errorText;
+        } catch {}
+        return res.status(500).json({
+          error: `No se pudieron obtener resultados de YouTube. Error HTTP ${ytRes.status}: ${parsedErr}`,
+          success: false,
+          videos: [],
+          items: []
+        });
+      }
+
+      const ytData = await ytRes.json();
+      items = ytData.items || [];
+
+      items.forEach((vItem: any) => {
+        const vId = typeof vItem.id === 'string' ? vItem.id : (vItem.id?.videoId || '');
+        const rawViews = parseInt(vItem.statistics?.viewCount || '0', 10);
+        let formattedViews = '🔥 Top Tendencia Global';
+        if (rawViews >= 1000000) {
+          formattedViews = `${(rawViews / 1000000).toFixed(1)}M vistas`;
+        } else if (rawViews >= 1000) {
+          formattedViews = `${Math.round(rawViews / 1000)}K vistas`;
+        } else if (rawViews > 0) {
+          formattedViews = `${rawViews} vistas`;
+        }
+
+        const rawPub = vItem.snippet?.publishedAt || '';
+        const formattedPub = rawPub ? `Publicado: ${rawPub.substring(0, 10)}` : 'Reciente';
+
+        videoStatsMap[vId] = {
+          views: formattedViews,
+          publishedAt: formattedPub
+        };
       });
+    } else {
+      // 2. BÚSQUEDA ESPECÍFICA POR TEMA / NICHO (order=viewCount & type=video)
+      const ytUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(cleanInput)}&type=video&order=${searchOrder}&maxResults=${limitCount}&key=${youtubeApiKey}`;
+      const ytRes = await fetch(ytUrl);
+
+      if (!ytRes.ok) {
+        const errorText = await ytRes.text();
+        let parsedErr = errorText;
+        try {
+          const errObj = JSON.parse(errorText);
+          parsedErr = errObj.error?.message || errorText;
+        } catch {}
+        return res.status(500).json({
+          error: `No se pudieron obtener resultados de YouTube. Error HTTP ${ytRes.status}: ${parsedErr}`,
+          success: false,
+          videos: [],
+          items: []
+        });
+      }
+
+      const ytData = await ytRes.json();
+      items = ytData.items || [];
+
+      const videoIds = items.map((item: any) => item.id?.videoId).filter(Boolean);
+
+      if (videoIds.length > 0) {
+        try {
+          const statsUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoIds.join(',')}&key=${youtubeApiKey}`;
+          const statsRes = await fetch(statsUrl);
+          if (statsRes.ok) {
+            const statsData = await statsRes.json();
+            (statsData.items || []).forEach((vItem: any) => {
+              const rawViews = parseInt(vItem.statistics?.viewCount || '0', 10);
+              let formattedViews = '🔥 Top Relevancia';
+              if (rawViews >= 1000000) {
+                formattedViews = `${(rawViews / 1000000).toFixed(1)}M vistas`;
+              } else if (rawViews >= 1000) {
+                formattedViews = `${Math.round(rawViews / 1000)}K vistas`;
+              } else if (rawViews > 0) {
+                formattedViews = `${rawViews} vistas`;
+              }
+
+              const rawPub = vItem.snippet?.publishedAt || '';
+              const formattedPub = rawPub ? `Publicado: ${rawPub.substring(0, 10)}` : 'Reciente';
+
+              videoStatsMap[vItem.id] = {
+                views: formattedViews,
+                publishedAt: formattedPub
+              };
+            });
+          }
+        } catch (statsErr) {
+          console.warn('Warning fetching video statistics:', statsErr);
+        }
+      }
     }
 
-    const ytData = await ytRes.json();
-    const items = ytData.items || [];
+    const displayLabel = isGlobalTrends ? 'Tendencias Globales YouTube' : cleanInput;
 
     if (items.length === 0) {
       return res.json({
         success: true,
-        message: `No se encontraron videos virales en YouTube para el término: "${query}".`,
+        message: `No se encontraron videos virales en YouTube para: "${displayLabel}".`,
         videos: [],
         items: [],
         data: {
-          nicheName: query,
+          nicheName: displayLabel,
           viralPotentialIndex: 'SIN RESULTADOS',
           potentialScore: '0/100',
           estimatedCpm: 'N/A',
@@ -574,42 +660,8 @@ const handleYouTubeSearch = async (req: Request, res: Response) => {
       });
     }
 
-    const videoIds = items.map((item: any) => item.id?.videoId).filter(Boolean);
-    let videoStatsMap: Record<string, { views: string; publishedAt: string }> = {};
-
-    if (videoIds.length > 0) {
-      try {
-        const statsUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoIds.join(',')}&key=${youtubeApiKey}`;
-        const statsRes = await fetch(statsUrl);
-        if (statsRes.ok) {
-          const statsData = await statsRes.json();
-          (statsData.items || []).forEach((vItem: any) => {
-            const rawViews = parseInt(vItem.statistics?.viewCount || '0', 10);
-            let formattedViews = '🔥 Top Relevancia';
-            if (rawViews >= 1000000) {
-              formattedViews = `${(rawViews / 1000000).toFixed(1)}M vistas`;
-            } else if (rawViews >= 1000) {
-              formattedViews = `${Math.round(rawViews / 1000)}K vistas`;
-            } else if (rawViews > 0) {
-              formattedViews = `${rawViews} vistas`;
-            }
-
-            const rawPub = vItem.snippet?.publishedAt || '';
-            const formattedPub = rawPub ? `Publicado: ${rawPub.substring(0, 10)}` : 'Reciente';
-
-            videoStatsMap[vItem.id] = {
-              views: formattedViews,
-              publishedAt: formattedPub
-            };
-          });
-        }
-      } catch (statsErr) {
-        console.warn('Warning fetching video statistics:', statsErr);
-      }
-    }
-
     const topViralIdeas = items.map((item: any, idx: number) => {
-      const vId = item.id?.videoId || `yt-${idx}`;
+      const vId = typeof item.id === 'string' ? item.id : (item.id?.videoId || `yt-${idx}`);
       const stats = videoStatsMap[vId] || { views: '🔥 Top Virales por Vistas', publishedAt: item.snippet?.publishedAt ? item.snippet.publishedAt.substring(0, 10) : '' };
       const rawTitle = item.snippet?.title || '';
       const cleanTitle = sanitizeInputText(rawTitle);
@@ -625,7 +677,7 @@ const handleYouTubeSearch = async (req: Request, res: Response) => {
         views: stats.views,
         isOutlier: idx < 3,
         multiplier: `${(5.0 - idx * 0.2).toFixed(1)}x sobre el promedio`,
-        concept: item.snippet?.description || `Concepto oficial extraído de YouTube para ${query}`
+        concept: item.snippet?.description || `Concepto oficial extraído de YouTube para ${displayLabel}`
       };
     });
 
@@ -635,7 +687,7 @@ const handleYouTubeSearch = async (req: Request, res: Response) => {
       videos: topViralIdeas,
       items: topViralIdeas,
       data: {
-        nicheName: query,
+        nicheName: displayLabel,
         viralPotentialIndex: 'ALTO',
         potentialScore: '100/100',
         estimatedCpm: 'API en Vivo Google Cloud',

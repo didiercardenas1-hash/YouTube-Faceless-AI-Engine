@@ -284,12 +284,16 @@ export default function App() {
   const [hasSearchedTop50, setHasSearchedTop50] = useState<boolean>(false);
 
   const handleFetchTop50Virales = async () => {
-    const targetNiche = sanitizeInputText(transcript.trim() || onboardingNiche || 'terror');
+    const rawTarget = transcript.trim();
+    const targetNiche = sanitizeInputText(rawTarget);
+    const isGlobal = !targetNiche || targetNiche.toLowerCase() === 'tendencias' || targetNiche.toLowerCase() === 'global';
+    const displayNiche = isGlobal ? 'Tendencias Globales YouTube' : targetNiche;
+
     setHasSearchedTop50(true);
     setIsLoadingTop50(true);
-    setTop50NicheName(targetNiche);
+    setTop50NicheName(displayNiche);
     setYoutubeSearchError(null);
-    setToastMessage(`🔥 Cargando las 50 tendencias de YouTube para "${targetNiche}"...`);
+    setToastMessage(`🔥 Cargando las 50 tendencias de YouTube (${displayNiche})...`);
     try {
       const res = await fetch('/api/youtube/niche-search', {
         method: 'POST',
@@ -300,7 +304,8 @@ export default function App() {
           q: targetNiche,
           niche: targetNiche,
           maxResults: 50,
-          order: 'viewCount'
+          order: 'viewCount',
+          chart: isGlobal ? 'mostPopular' : undefined
         })
       });
       const data = await res.json();
@@ -310,13 +315,13 @@ export default function App() {
         setTop50ViralVideos(videoList);
         setNicheExplorerData(prev => ({
           ...prev,
-          nicheName: targetNiche,
+          nicheName: displayNiche,
           topViralIdeas: videoList
         }));
-        setToastMessage(`🔥 ¡50 Videos Más Virales cargados exitosamente para "${targetNiche}"!`);
+        setToastMessage(`🔥 ¡50 Videos Virales cargados exitosamente para "${displayNiche}"!`);
       } else if (res.ok && videoList.length === 0) {
         setTop50ViralVideos([]);
-        setYoutubeSearchError(`No se encontraron videos virales en YouTube para el término: "${targetNiche}". Intenta con otro término de búsqueda.`);
+        setYoutubeSearchError(`No se encontraron videos virales en YouTube para: "${displayNiche}". Intenta con otro término de búsqueda.`);
       } else {
         const errMsg = data?.error || 'No se pudieron obtener resultados de YouTube. Revisa la API Key.';
         setTop50ViralVideos([]);
@@ -853,20 +858,26 @@ export default function App() {
 
   const handleSearchNiche = async (keyword: string) => {
     const cleanKey = sanitizeInputText(keyword);
-    if (!cleanKey.trim()) return;
+    const searchTarget = cleanKey.trim();
+    const displayLabel = searchTarget || 'Tendencias Globales YouTube';
     setIsSearchingNiche(true);
     setYoutubeSearchError(null);
     try {
       const res = await fetch('/api/youtube/niche-search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nicheKeyword: cleanKey, query: cleanKey, niche: cleanKey })
+        body: JSON.stringify({
+          nicheKeyword: searchTarget,
+          query: searchTarget,
+          niche: searchTarget,
+          chart: !searchTarget ? 'mostPopular' : undefined
+        })
       });
       const data = await res.json();
       if (res.ok && data.success && data.data) {
         setNicheExplorerData(data.data);
-        setSelectedNicheCategory(cleanKey);
-        setToastMessage(`🔍 Nicho "${cleanKey}" analizado vía YouTube Data API: ${data.data.topViralIdeas?.length || 0} Videos Virales encontrados.`);
+        setSelectedNicheCategory(displayLabel);
+        setToastMessage(`🔍 "${displayLabel}" analizado vía YouTube Data API: ${data.data.topViralIdeas?.length || 0} Videos Virales encontrados.`);
       } else {
         const errMsg = data?.error || `Error HTTP ${res.status} al consultar la API de YouTube.`;
         setYoutubeSearchError(errMsg);
@@ -2625,7 +2636,7 @@ export default function App() {
                 />
                 <button
                   type="button"
-                  onClick={() => handleSearchNiche(customNicheInput || 'Finanzas')}
+                  onClick={() => handleSearchNiche(customNicheInput)}
                   disabled={isSearchingNiche}
                   className="px-5 py-3 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-mono font-extrabold text-xs rounded-xl shadow-[0_0_15px_rgba(217,70,239,0.3)] flex items-center justify-center gap-2 transition-all"
                 >
