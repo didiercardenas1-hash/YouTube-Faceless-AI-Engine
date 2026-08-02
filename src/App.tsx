@@ -281,6 +281,58 @@ export default function App() {
   const [top50ViralVideos, setTop50ViralVideos] = useState<any[]>([]);
   const [top50NicheName, setTop50NicheName] = useState<string>('');
   const [isLoadingTop50, setIsLoadingTop50] = useState<boolean>(false);
+  const [hasSearchedTop50, setHasSearchedTop50] = useState<boolean>(false);
+
+  const handleFetchTop50Virales = async () => {
+    const targetNiche = sanitizeInputText(transcript.trim() || onboardingNiche || 'terror');
+    setHasSearchedTop50(true);
+    setIsLoadingTop50(true);
+    setTop50NicheName(targetNiche);
+    setYoutubeSearchError(null);
+    setToastMessage(`🔥 Cargando las 50 tendencias de YouTube para "${targetNiche}"...`);
+    try {
+      const res = await fetch('/api/youtube/niche-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nicheKeyword: targetNiche,
+          query: targetNiche,
+          q: targetNiche,
+          niche: targetNiche,
+          maxResults: 50,
+          order: 'viewCount'
+        })
+      });
+      const data = await res.json();
+      const videoList = data.videos || data.items || data.data?.topViralIdeas || [];
+
+      if (res.ok && data.success !== false && videoList.length > 0) {
+        setTop50ViralVideos(videoList);
+        setNicheExplorerData(prev => ({
+          ...prev,
+          nicheName: targetNiche,
+          topViralIdeas: videoList
+        }));
+        setToastMessage(`🔥 ¡50 Videos Más Virales cargados exitosamente para "${targetNiche}"!`);
+      } else if (res.ok && videoList.length === 0) {
+        setTop50ViralVideos([]);
+        setYoutubeSearchError(`No se encontraron videos virales en YouTube para el término: "${targetNiche}". Intenta con otro término de búsqueda.`);
+      } else {
+        const errMsg = data?.error || 'No se pudieron obtener resultados de YouTube. Revisa la API Key.';
+        setTop50ViralVideos([]);
+        setYoutubeSearchError(errMsg);
+        setToastMessage(`⚠️ ${errMsg}`);
+      }
+    } catch (err: any) {
+      const msg = err?.message || 'No se pudieron obtener resultados de YouTube. Revisa la conexión o la API Key.';
+      setTop50ViralVideos([]);
+      setYoutubeSearchError(msg);
+      setToastMessage(`⚠️ ${msg}`);
+    } finally {
+      setIsLoadingTop50(false);
+      setTimeout(() => setToastMessage(null), 4000);
+    }
+  };
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUrl, setNewUrl] = useState('');
   const [newName, setNewName] = useState('');
@@ -827,42 +879,6 @@ export default function App() {
     } finally {
       setIsSearchingNiche(false);
       setTimeout(() => setToastMessage(null), 3500);
-    }
-  };
-
-  const handleFetchTop50Virales = async () => {
-    const targetNiche = sanitizeInputText(transcript.trim() || onboardingNiche || 'terror');
-    setIsLoadingTop50(true);
-    setTop50NicheName(targetNiche);
-    setYoutubeSearchError(null);
-    setToastMessage(`🔥 Cargando las 50 tendencias de YouTube para "${targetNiche}"...`);
-    try {
-      const res = await fetch('/api/youtube/niche-search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nicheKeyword: targetNiche, query: targetNiche, niche: targetNiche, maxResults: 50, order: 'viewCount' })
-      });
-      const data = await res.json();
-      if (res.ok && data.success && data.data?.topViralIdeas) {
-        setTop50ViralVideos(data.data.topViralIdeas);
-        setNicheExplorerData(prev => ({
-          ...prev,
-          nicheName: targetNiche,
-          topViralIdeas: data.data.topViralIdeas
-        }));
-        setToastMessage(`🔥 ¡50 Videos Más Virales cargados exitosamente para "${targetNiche}"!`);
-      } else {
-        const errMsg = data?.error || 'Error al cargar las 50 tendencias de la API de YouTube.';
-        setYoutubeSearchError(errMsg);
-        setToastMessage(`⚠️ ${errMsg}`);
-      }
-    } catch (err: any) {
-      const msg = err?.message || 'Error de conexión al consultar las 50 tendencias de YouTube.';
-      setYoutubeSearchError(msg);
-      setToastMessage(`⚠️ ${msg}`);
-    } finally {
-      setIsLoadingTop50(false);
-      setTimeout(() => setToastMessage(null), 4000);
     }
   };
 
@@ -2381,7 +2397,7 @@ export default function App() {
             </section>
 
             {/* CONTENEDOR DE RESULTADOS: TOP 50 VIDEOS MÁS VIRALES EN VIVO */}
-            {(isLoadingTop50 || top50ViralVideos.length > 0) && (
+            {(hasSearchedTop50 || isLoadingTop50 || top50ViralVideos.length > 0 || youtubeSearchError) && (
               <section id="top-50-results-section" className="mb-8 font-mono animate-in fade-in zoom-in-95 duration-300">
                 <div className="glass-card rounded-3xl p-6 border border-amber-500/40 shadow-[0_0_35px_rgba(245,158,11,0.15)] space-y-4">
                   

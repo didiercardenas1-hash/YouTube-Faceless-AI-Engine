@@ -896,21 +896,26 @@ app.post('/api/youtube/track-channel', async (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/youtube/niche-search', async (req: Request, res: Response) => {
-  const { nicheKeyword, query: bodyQuery, niche, term, keyword, maxResults } = req.body || {};
-  const query = sanitizeInputText(nicheKeyword || bodyQuery || niche || term || keyword || 'terror').trim();
-  const limitCount = maxResults || 10;
+const handleYouTubeSearch = async (req: Request, res: Response) => {
+  const body = req.body || {};
+  const queryParam = req.query || {};
+  const { nicheKeyword, query: bodyQuery, q, niche, term, keyword, maxResults, order } = { ...queryParam, ...body };
+  const query = sanitizeInputText(q || nicheKeyword || bodyQuery || niche || term || keyword || 'terror').trim();
+  const limitCount = Math.min(Math.max(parseInt(String(maxResults || '50'), 10) || 50, 1), 50);
+  const searchOrder = order || 'viewCount';
   const youtubeApiKey = process.env.YOUTUBE_DATA_API_KEY || process.env.NEXT_PUBLIC_YOUTUBE_DATA_API_KEY || '';
 
   if (!youtubeApiKey) {
     return res.status(500).json({
-      error: 'La variable de entorno YOUTUBE_DATA_API_KEY no está configurada en .env / servidor.',
-      success: false
+      error: 'No se pudieron obtener resultados de YouTube. Revisa la API Key (YOUTUBE_DATA_API_KEY no está configurada en el servidor).',
+      success: false,
+      videos: [],
+      items: []
     });
   }
 
   try {
-    const ytUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&order=viewCount&maxResults=${limitCount}&key=${youtubeApiKey}`;
+    const ytUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&order=${searchOrder}&maxResults=${limitCount}&key=${youtubeApiKey}`;
     const ytRes = await fetch(ytUrl);
 
     if (!ytRes.ok) {
@@ -920,9 +925,11 @@ app.post('/api/youtube/niche-search', async (req: Request, res: Response) => {
         const errObj = JSON.parse(errorText);
         parsedErr = errObj.error?.message || errorText;
       } catch {}
-      return res.status(ytRes.status).json({
-        error: `Error HTTP ${ytRes.status} de la API de YouTube: ${parsedErr}`,
-        success: false
+      return res.status(500).json({
+        error: `No se pudieron obtener resultados de YouTube. Revisa la API Key (Error HTTP ${ytRes.status}: ${parsedErr})`,
+        success: false,
+        videos: [],
+        items: []
       });
     }
 
@@ -933,6 +940,8 @@ app.post('/api/youtube/niche-search', async (req: Request, res: Response) => {
       return res.json({
         success: true,
         message: `No se encontraron videos virales en YouTube para el término: "${query}".`,
+        videos: [],
+        items: [],
         data: {
           nicheName: query,
           viralPotentialIndex: 'SIN RESULTADOS',
@@ -1002,6 +1011,8 @@ app.post('/api/youtube/niche-search', async (req: Request, res: Response) => {
     return res.json({
       success: true,
       source: 'YouTube Data API v3 (Oficial Google Cloud)',
+      videos: topViralIdeas,
+      items: topViralIdeas,
       data: {
         nicheName: query,
         viralPotentialIndex: 'ALTO',
@@ -1013,11 +1024,20 @@ app.post('/api/youtube/niche-search', async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     return res.status(500).json({
-      error: err.message || 'Error al conectar con la API oficial de YouTube',
-      success: false
+      error: err.message || 'No se pudieron obtener resultados de YouTube. Revisa la API Key.',
+      success: false,
+      videos: [],
+      items: []
     });
   }
-});
+};
+
+app.post('/api/youtube/niche-search', handleYouTubeSearch);
+app.get('/api/youtube/niche-search', handleYouTubeSearch);
+app.post('/api/youtube/search', handleYouTubeSearch);
+app.get('/api/youtube/search', handleYouTubeSearch);
+app.post('/api/search', handleYouTubeSearch);
+app.get('/api/search', handleYouTubeSearch);
 
 // ==========================================
 // 9. VIDEO CANVAS RENDERING ENGINE (FFmpeg / Canvas API)
